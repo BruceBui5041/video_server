@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 )
 
 type SegmentControl struct {
@@ -74,12 +73,12 @@ func main() {
 	sc := NewSegmentControl()
 
 	// Simulate adding segments for clients
-	go func() {
-		for i := range 3 {
-			sc.AddSegment("client1", fmt.Sprintf("segment_%03d.ts", i))
-			time.Sleep(3 * time.Second)
-		}
-	}()
+	// go func() {
+	for i := range 3 {
+		sc.AddSegment("client1", fmt.Sprintf("segment_%03d.ts", i))
+		// time.Sleep(5 * time.Second)
+	}
+	// }()
 
 	http.HandleFunc("/segment", enableCORS(func(w http.ResponseWriter, r *http.Request) {
 		clientID := r.URL.Query().Get("client_id")
