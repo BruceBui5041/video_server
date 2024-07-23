@@ -5,51 +5,89 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
+	"video_server/appconst"
+	"video_server/storagehandler"
 )
 
-func SegmentHandler(w http.ResponseWriter, r *http.Request) {
-	segment := r.URL.Query().Get("segment")
-	if segment == "" {
-		http.Error(w, "Missing segment", http.StatusBadRequest)
-		return
+// getFileFromCloudFrontOrS3 checks CloudFront first, then falls back to S3 if needed
+func getFileFromCloudFrontOrS3(bucket, key string) (io.ReadCloser, error) {
+	// First, try to get the file from CloudFront
+	cloudfrontURL := fmt.Sprintf("https://%s/%s", appconst.AWSCloudFrontDomainName, key)
+	resp, err := http.Get(cloudfrontURL)
+	if err == nil && resp.StatusCode == http.StatusOK {
+		return resp.Body, nil
 	}
 
-	// Construct the full path to the segment file
-	segmentPath := filepath.Join("output/output_segs/test.mp4_720p", segment)
-
-	// Open the segment file
-	file, err := os.Open(segmentPath)
+	// If CloudFront request failed, fallback to S3
+	file, err := storagehandler.GetS3File(bucket, key)
 	if err != nil {
-		http.Error(w, "Error opening segment file", http.StatusInternalServerError)
-		log.Printf("Error opening segment file: %v", err)
+		return nil, fmt.Errorf("failed to get file from S3: %v", err)
+	}
+
+	return file, nil
+}
+
+func SegmentHandler(w http.ResponseWriter, r *http.Request) {
+	segmentNumber := r.URL.Query().Get("number")
+	if segmentNumber == "" {
+		http.Error(w, "Missing number", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+
+	videoName := r.URL.Query().Get("name")
+	if videoName == "" {
+		http.Error(w, "Missing video name", http.StatusBadRequest)
+		return
+	}
+
+	resolution := r.URL.Query().Get("resolution")
+	if resolution == "" {
+		http.Error(w, "Missing video resolution", http.StatusBadRequest)
+		return
+	}
+
+	key := filepath.Join("segments", videoName, resolution, fmt.Sprintf("segment_%s.ts", segmentNumber))
+	vidSegment, err := getFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error getting segment file: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer vidSegment.Close()
 
 	// Set the content type for MPEG-2 Transport Stream
 	w.Header().Set("Content-Type", "video/MP2T")
 
-	// Copy the file content to the response writer
-	_, err = io.Copy(w, file)
+	_, err = io.Copy(w, vidSegment)
 	if err != nil {
 		log.Printf("Error writing segment to response: %v", err)
 	}
 }
 
 func GetPlaylistHandler(w http.ResponseWriter, r *http.Request) {
-	playlistPath := filepath.Join("output/output_segs/test.mp4_720p", "playlist.m3u8")
-	file, err := os.Open(playlistPath)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error opening playlist file: %v", err), http.StatusInternalServerError)
+	videoName := r.URL.Query().Get("name")
+	if videoName == "" {
+		http.Error(w, "Missing video name", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+
+	resolution := r.URL.Query().Get("resolution")
+	if resolution == "" {
+		http.Error(w, "Missing video resolution", http.StatusBadRequest)
+		return
+	}
+
+	key := filepath.Join("segments", videoName, resolution, fmt.Sprintf("playlist_%s.m3u8", resolution))
+	playlist, err := getFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error getting playlist file: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer playlist.Close()
 
 	w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
 
-	_, err = io.Copy(w, file)
+	_, err = io.Copy(w, playlist)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Error sending playlist file: %v", err), http.StatusInternalServerError)
 		return

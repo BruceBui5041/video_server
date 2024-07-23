@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"video_server/apihandler"
+
+	"github.com/joho/godotenv"
 )
 
 // CORS middleware
@@ -26,8 +28,13 @@ func enableCORS(next http.HandlerFunc) http.HandlerFunc {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	http.HandleFunc("/segment", enableCORS(apihandler.SegmentHandler))
-	http.HandleFunc("/segment/playlist.m3u8", enableCORS(apihandler.GetPlaylistHandler))
+	http.HandleFunc("/segment/playlist", enableCORS(apihandler.GetPlaylistHandler))
 
 	log.Println("Starting server on :3000")
 	log.Fatal(http.ListenAndServe(":3000", nil))
