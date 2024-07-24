@@ -34,7 +34,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	watermill.StartSubscribers()
+	go watermill.StartSubscribers()
 
 	http.HandleFunc("/segment", enableCORS(apihandler.SegmentHandler))
 	http.HandleFunc("/segment/playlist", enableCORS(apihandler.GetPlaylistHandler))
