@@ -1,6 +1,7 @@
 package storagehandler
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -63,4 +64,32 @@ func GetS3File(bucket, key string) (io.ReadCloser, error) {
 
 	logger.AppLogger.Info("Successfully retrieved object from S3", zap.String("bucket", bucket), zap.String("key", key))
 	return result.Body, nil
+}
+
+func UploadFileToS3(file io.Reader, bucket, key string) error {
+	// Create an S3 service client
+	svc := s3.New(AWSSession)
+
+	// Read the entire file into a buffer
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(file)
+	if err != nil {
+		logger.AppLogger.Error("Failed to read file into buffer", zap.Error(err))
+		return fmt.Errorf("failed to read file: %v", err)
+	}
+
+	// Create the PutObject request
+	_, err = svc.PutObject(&s3.PutObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+		Body:   bytes.NewReader(buf.Bytes()),
+	})
+
+	if err != nil {
+		logger.AppLogger.Error("Failed to upload file to S3", zap.Error(err), zap.String("bucket", bucket), zap.String("key", key))
+		return fmt.Errorf("failed to upload file: %v", err)
+	}
+
+	logger.AppLogger.Info("Successfully uploaded file to S3", zap.String("bucket", bucket), zap.String("key", key))
+	return nil
 }

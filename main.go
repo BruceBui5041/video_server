@@ -35,6 +35,7 @@ func main() {
 
 	http.HandleFunc("/segment", enableCORS(apihandler.SegmentHandler))
 	http.HandleFunc("/segment/playlist", enableCORS(apihandler.GetPlaylistHandler))
+	http.HandleFunc("/upload", enableCORS(apihandler.UploadVideoHandler))
 
 	log.Println("Starting server on :3000")
 	log.Fatal(http.ListenAndServe(":3000", nil))

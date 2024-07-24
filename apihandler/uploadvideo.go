@@ -2,11 +2,11 @@ package apihandler
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
+	"video_server/appconst"
 	"video_server/logger"
+	"video_server/storagehandler"
 
 	"go.uber.org/zap"
 )
@@ -24,33 +24,20 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Create the uploads directory if it doesn't exist
-	err = os.MkdirAll("./uploads", os.ModePerm)
+	// Generate a unique filename or use a specific naming convention
+	filename := filepath.Base(header.Filename)
+	s3Key := fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, filename)
+
+	// Upload the file directly to S3
+	err = storagehandler.UploadFileToS3(file, appconst.AWSVideoS3BuckerName, s3Key)
 	if err != nil {
-		logger.AppLogger.Error("Failed to create uploads directory", zap.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.AppLogger.Error("Failed to upload file to S3", zap.Error(err), zap.String("filename", filename))
+		http.Error(w, "Failed to upload video", http.StatusInternalServerError)
 		return
 	}
 
-	// Create a new file in the uploads directory
-	dst, err := os.Create(filepath.Join("uploads", header.Filename))
-	if err != nil {
-		logger.AppLogger.Error("Failed to create destination file", zap.Error(err), zap.String("filename", header.Filename))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer dst.Close()
-
-	// Copy the uploaded file to the filesystem
-	_, err = io.Copy(dst, file)
-	if err != nil {
-		logger.AppLogger.Error("Failed to copy uploaded file", zap.Error(err), zap.String("filename", header.Filename))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	logger.AppLogger.Info("Video uploaded successfully", zap.String("filename", header.Filename))
+	logger.AppLogger.Info("Video uploaded successfully to S3", zap.String("filename", filename), zap.String("s3Key", s3Key))
 
 	// Respond to the client
-	fmt.Fprintf(w, "Video uploaded successfully: %s", header.Filename)
+	fmt.Fprintf(w, "Video uploaded successfully: %s", filename)
 }
