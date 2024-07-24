@@ -3,15 +3,16 @@ package storagehandler
 import (
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"video_server/appconst"
+	"video_server/logger"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 var AWSSession *session.Session
@@ -20,7 +21,7 @@ func init() {
 	// Load the .env file
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		logger.AppLogger.Fatal("Error loading .env file", zap.Error(err))
 	}
 
 	// Get credentials from environment variables
@@ -36,10 +37,11 @@ func init() {
 		Credentials: creds,
 	})
 	if err != nil {
-		log.Fatal(err)
+		logger.AppLogger.Fatal("Failed to create AWS session", zap.Error(err))
 	}
 
 	AWSSession = sess
+	logger.AppLogger.Info("AWS session created successfully")
 }
 
 func GetS3File(bucket, key string) (io.ReadCloser, error) {
@@ -55,9 +57,10 @@ func GetS3File(bucket, key string) (io.ReadCloser, error) {
 	// Fetch the object
 	result, err := svc.GetObject(input)
 	if err != nil {
+		logger.AppLogger.Error("Failed to get object from S3", zap.Error(err), zap.String("bucket", bucket), zap.String("key", key))
 		return nil, fmt.Errorf("failed to get object: %v", err)
 	}
 
-	fmt.Printf("Successfully retrieved %s from bucket %s\n", key, bucket)
+	logger.AppLogger.Info("Successfully retrieved object from S3", zap.String("bucket", bucket), zap.String("key", key))
 	return result.Body, nil
 }
