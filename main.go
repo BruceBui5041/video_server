@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"video_server/apihandler"
+	"video_server/watermill"
 
 	"github.com/joho/godotenv"
 )
@@ -32,6 +33,8 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+
+	watermill.StartSubscribers()
 
 	http.HandleFunc("/segment", enableCORS(apihandler.SegmentHandler))
 	http.HandleFunc("/segment/playlist", enableCORS(apihandler.GetPlaylistHandler))

@@ -36,7 +36,11 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.AppLogger.Info("Video uploaded successfully to S3", zap.String("filename", filename), zap.String("s3Key", s3Key))
+	logger.AppLogger.Info(
+		"Video uploaded successfully to S3",
+		zap.String("filename", filename),
+		zap.String("s3Key", s3Key),
+	)
 
 	// Respond to the client
 	fmt.Fprintf(w, "Video uploaded successfully: %s", filename)
