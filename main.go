@@ -31,6 +31,7 @@ func main() {
 	}
 
 	go watermill.StartSubscribers()
+	// go redishander.StartRedisSubscribers(redishander.RedisClient)
 
 	r := mux.NewRouter()
 
@@ -39,7 +40,7 @@ func main() {
 	r.HandleFunc("/segment/playlist/{name}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment/playlist/{name}/{resolution}/{playlistName}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment", apihandler.SegmentHandler).Methods("GET")
-	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("POST")
+	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("GET")
 
 	srv := &http.Server{
 		Handler: r,
