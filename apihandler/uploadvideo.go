@@ -11,11 +11,22 @@ import (
 	"go.uber.org/zap"
 )
 
-func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
-	// Set a reasonable maximum upload size (e.g., 100MB)
-	r.ParseMultipartForm(100 << 20)
+const maxUploadSize = 100 << 20 // 100 MB
 
-	// Get the file from the request
+func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
+	if r.ContentLength > maxUploadSize {
+		logger.AppLogger.Error("File too large")
+		http.Error(w, "File too large. Max size is 100MB", http.StatusRequestEntityTooLarge)
+		return
+	}
+
+	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
+	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+		logger.AppLogger.Error("Failed to parse multipart form", zap.Error(err))
+		http.Error(w, "File too large. Max size is 100MB", http.StatusRequestEntityTooLarge)
+		return
+	}
+
 	file, header, err := r.FormFile("video")
 	if err != nil {
 		logger.AppLogger.Error("Failed to get file from request", zap.Error(err))
@@ -24,11 +35,9 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Generate a unique filename or use a specific naming convention
 	filename := filepath.Base(header.Filename)
 	s3Key := fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, filename)
 
-	// Upload the file directly to S3
 	err = storagehandler.UploadFileToS3(file, appconst.AWSVideoS3BuckerName, s3Key)
 	if err != nil {
 		logger.AppLogger.Error("Failed to upload file to S3", zap.Error(err), zap.String("filename", filename))
@@ -42,6 +51,6 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 		zap.String("s3Key", s3Key),
 	)
 
-	// Respond to the client
+	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Video uploaded successfully: %s", filename)
 }

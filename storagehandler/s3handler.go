@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
+	"time"
 	"video_server/appconst"
 	"video_server/logger"
 
@@ -92,4 +94,26 @@ func UploadFileToS3(file io.Reader, bucket, key string) error {
 
 	logger.AppLogger.Info("Successfully uploaded file to S3", zap.String("bucket", bucket), zap.String("key", key))
 	return nil
+}
+
+var cloudFrontClient = &http.Client{
+	Timeout: 5 * time.Second,
+}
+
+func GetFileFromCloudFrontOrS3(bucket, key string) (io.ReadCloser, error) {
+	cloudfrontURL := fmt.Sprintf("https://%s/%s", appconst.AWSCloudFrontDomainName, key)
+	resp, err := cloudFrontClient.Get(cloudfrontURL)
+	if err == nil && resp.StatusCode == http.StatusOK {
+		logger.AppLogger.Info("File retrieved from CloudFront", zap.String("key", key))
+		return resp.Body, nil
+	}
+
+	file, err := GetS3File(bucket, key)
+	if err != nil {
+		logger.AppLogger.Error("Failed to get file from S3", zap.Error(err), zap.String("bucket", bucket), zap.String("key", key))
+		return nil, fmt.Errorf("failed to get file from S3: %v", err)
+	}
+
+	logger.AppLogger.Info("File retrieved from S3", zap.String("bucket", bucket), zap.String("key", key))
+	return file, nil
 }
