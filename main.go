@@ -40,7 +40,7 @@ func main() {
 	r.HandleFunc("/segment/playlist/{name}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment/playlist/{name}/{resolution}/{playlistName}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment", apihandler.SegmentHandler).Methods("GET")
-	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("GET")
+	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("POST")
 
 	srv := &http.Server{
 		Handler: r,
