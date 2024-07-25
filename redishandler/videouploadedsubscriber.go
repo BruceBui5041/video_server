@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"video_server/appconst"
-	"video_server/watermill"
 
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -32,10 +30,10 @@ func StartRedisSubscribers(redisClient *redis.Client) {
 			continue
 		}
 
-		// Create a Watermill message
-		watermillMsg := message.NewMessage(videoInfo.VideoID, []byte(msg.Payload))
+		// // Create a Watermill message
+		// watermillMsg := message.NewMessage(videoInfo.VideoID, []byte(msg.Payload))
 
-		// Process the message using the existing handler
-		watermill.HandleNewVideoUpload(watermillMsg)
+		// // Process the message using the existing handler
+		// watermill.HandleNewVideoUpload(watermillMsg)
 	}
 }

@@ -12,9 +12,9 @@ import (
 
 func HandleNewVideoUpload(msg *message.Message) {
 	var videoInfo *messagemodel.VideoInfo
-	err := json.Unmarshal(msg.Payload, videoInfo)
+	err := json.Unmarshal(msg.Payload, &videoInfo)
 	if err != nil {
-		logger.AppLogger.Error("Cannot unmarshal message payload", zap.Any("payload", msg.Payload))
+		logger.AppLogger.Error("Cannot unmarshal message payload", zap.Any("payload", msg.Payload), zap.Error(err))
 		return
 	}
 

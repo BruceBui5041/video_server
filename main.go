@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"video_server/apihandler"
 	"video_server/grpcserver"
+	"video_server/messagemodel"
 	"video_server/watermill"
 
 	// You'll need to create this package
 	pb "video_server/proto/video_service/video_service"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
@@ -35,21 +37,32 @@ func startHTTPServer() {
 	r := mux.NewRouter()
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8080"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Content-Type", "Authorization"},
-		AllowCredentials: true,
-		Debug:            true,
+		AllowedOrigins:     []string{"*"},
+		AllowedMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:     []string{"*"},
+		AllowCredentials:   true,
+		ExposedHeaders:     []string{"Content-Length"},
+		MaxAge:             300,
+		OptionsPassthrough: true,
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		Debug: true,
 	})
-	handler := c.Handler(r)
 
+	// Apply CORS middleware to all routes
+	r.Use(c.Handler)
+
+	// Define your routes
 	r.HandleFunc("/segment/playlist/{name}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment/playlist/{name}/{resolution}/{playlistName}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment", apihandler.SegmentHandler).Methods("GET")
 	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/test", test).Methods("GET")
 
+	// Create server
 	srv := &http.Server{
-		Handler: handler,
+		Handler: r, // Use the router directly, not wrapped in CORS handler
 		Addr:    ":3000",
 	}
 
@@ -73,4 +86,14 @@ func startGRPCServer() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
+}
+
+func test(w http.ResponseWriter, r *http.Request) {
+	videoInfo := &messagemodel.VideoInfo{
+		VideoID: uuid.New().String(),
+		Title:   "filename",
+		S3Key:   "s3Key",
+	}
+
+	go watermill.PublishVideoUploadedEvent(videoInfo)
 }

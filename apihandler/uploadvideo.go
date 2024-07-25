@@ -72,5 +72,5 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 		S3Key:   s3Key,
 	}
 
-	go watermill.PublishVideoUploaderEvent(videoInfo)
+	go watermill.PublishVideoUploadedEvent(videoInfo)
 }

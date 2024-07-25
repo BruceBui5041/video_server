@@ -11,12 +11,12 @@ import (
 	"go.uber.org/zap"
 )
 
-func PublishVideoUploaderEvent(videoInfo *messagemodel.VideoInfo) error {
-	var msg message.Message
-	err := json.Unmarshal([]byte(msg.Payload), &videoInfo)
+func PublishVideoUploadedEvent(videoInfo *messagemodel.VideoInfo) error {
+	// Marshal videoInfo into JSON
+	payload, err := json.Marshal(videoInfo)
 	if err != nil {
 		logger.AppLogger.Error(
-			"Error parsing message payload",
+			"Error marshaling videoInfo to JSON",
 			zap.Any("videoInfo", videoInfo),
 			zap.Error(err),
 		)
@@ -24,12 +24,12 @@ func PublishVideoUploaderEvent(videoInfo *messagemodel.VideoInfo) error {
 	}
 
 	// Create a Watermill message
-	watermillMsg := message.NewMessage(videoInfo.VideoID, []byte(msg.Payload))
+	watermillMsg := message.NewMessage(videoInfo.VideoID, payload)
 	err = Publisher.Publish(appconst.TopicNewVideoUploaded, watermillMsg)
 	if err != nil {
 		logger.AppLogger.Error(
 			fmt.Sprintf("Error publish %s", appconst.TopicNewVideoUploaded),
-			zap.Any("msg payload", msg.Payload),
+			zap.Any("msg payload", payload),
 			zap.Error(err),
 		)
 		return err
