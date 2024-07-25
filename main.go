@@ -5,9 +5,12 @@ import (
 	"net"
 	"net/http"
 	"video_server/apihandler"
+	"video_server/grpcserver"
 	"video_server/watermill"
 
 	// You'll need to create this package
+	pb "video_server/proto/video_service/video_service"
+
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"github.com/rs/cors"
@@ -64,7 +67,7 @@ func startGRPCServer() {
 
 	// Register your gRPC services here
 	// For example:
-	// pb.RegisterYourServiceServer(s, &grpcserver.YourServiceServer{})
+	pb.RegisterVideoServiceServer(s, &grpcserver.VideoServiceServer{})
 
 	log.Println("Starting gRPC server on :50051")
 	if err := s.Serve(lis); err != nil {

@@ -2,6 +2,7 @@ package watermill
 
 import (
 	"encoding/json"
+	"video_server/grpcserver"
 	"video_server/logger"
 	"video_server/messagemodel"
 
@@ -17,5 +18,6 @@ func HandleNewVideoUpload(msg *message.Message) {
 		return
 	}
 
+	go grpcserver.RequestNewVideoUploaded(videoInfo)
 	msg.Ack()
 }
