@@ -1,25 +1,15 @@
-package redishander
+package redishandler
 
 import (
 	"context"
 	"encoding/json"
 	"log"
 	"video_server/appconst"
-
-	"github.com/go-redis/redis/v8"
+	"video_server/messagemodel"
 )
 
-// VideoInfo represents the information about a newly uploaded video
-type VideoInfo struct {
-	VideoID     string `json:"video_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	UploadedBy  string `json:"uploaded_by"`
-	Timestamp   int64  `json:"timestamp"`
-}
-
 // PublishNewVideoUploaded publishes a message to the Redis channel when a new video is uploaded
-func PublishNewVideoUploaded(redisClient *redis.Client, videoInfo VideoInfo) error {
+func PublishNewVideoUploaded(videoInfo messagemodel.VideoInfo) error {
 	ctx := context.Background()
 
 	// Convert the VideoInfo struct to JSON
@@ -30,7 +20,7 @@ func PublishNewVideoUploaded(redisClient *redis.Client, videoInfo VideoInfo) err
 	}
 
 	// Publish the message to the Redis channel
-	err = redisClient.Publish(ctx, appconst.TopicNewVideoUploaded, payload).Err()
+	err = RedisClient.Publish(ctx, appconst.TopicNewVideoUploaded, payload).Err()
 	if err != nil {
 		log.Printf("Error publishing message to Redis: %v", err)
 		return err

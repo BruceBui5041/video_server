@@ -1,15 +1,21 @@
 package watermill
 
 import (
-	"fmt"
+	"encoding/json"
+	"video_server/logger"
+	"video_server/messagemodel"
 
 	"github.com/ThreeDotsLabs/watermill/message"
+	"go.uber.org/zap"
 )
 
 func HandleNewVideoUpload(msg *message.Message) {
-	s3Key := string(msg.Payload)
-	fmt.Printf("New video uploaded: %s\n", s3Key)
-	// Add your processing logic here
-	// For example, you could start a video transcoding job
+	var videoInfo *messagemodel.VideoInfo
+	err := json.Unmarshal(msg.Payload, videoInfo)
+	if err != nil {
+		logger.AppLogger.Error("Cannot unmarshal message payload", zap.Any("payload", msg.Payload))
+		return
+	}
+
 	msg.Ack()
 }

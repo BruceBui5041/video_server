@@ -1,4 +1,4 @@
-package redishander
+package redishandler
 
 import (
 	"context"

@@ -2,28 +2,17 @@ package main
 
 import (
 	"log"
+	"net"
 	"net/http"
 	"video_server/apihandler"
 	"video_server/watermill"
 
+	// You'll need to create this package
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
+	"github.com/rs/cors"
+	"google.golang.org/grpc"
 )
-
-func enableCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -31,22 +20,54 @@ func main() {
 	}
 
 	go watermill.StartSubscribers()
-	// go redishander.StartRedisSubscribers(redishander.RedisClient)
 
+	// Start HTTP server
+	go startHTTPServer()
+
+	// Start gRPC server
+	startGRPCServer()
+}
+
+func startHTTPServer() {
 	r := mux.NewRouter()
 
-	r.Use(enableCORS)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8080"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization"},
+		AllowCredentials: true,
+		Debug:            true,
+	})
+	handler := c.Handler(r)
 
 	r.HandleFunc("/segment/playlist/{name}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment/playlist/{name}/{resolution}/{playlistName}", apihandler.GetPlaylistHandler).Methods("GET")
 	r.HandleFunc("/segment", apihandler.SegmentHandler).Methods("GET")
-	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("POST")
+	r.HandleFunc("/upload", apihandler.UploadVideoHandler).Methods("POST", "OPTIONS")
 
 	srv := &http.Server{
-		Handler: r,
+		Handler: handler,
 		Addr:    ":3000",
 	}
 
-	log.Println("Starting server on :3000")
+	log.Println("Starting HTTP server on :3000")
 	log.Fatal(srv.ListenAndServe())
+}
+
+func startGRPCServer() {
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("Failed to listen: %v", err)
+	}
+
+	s := grpc.NewServer()
+
+	// Register your gRPC services here
+	// For example:
+	// pb.RegisterYourServiceServer(s, &grpcserver.YourServiceServer{})
+
+	log.Println("Starting gRPC server on :50051")
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("Failed to serve: %v", err)
+	}
 }

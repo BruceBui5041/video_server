@@ -7,8 +7,11 @@ import (
 	"strings"
 	"video_server/appconst"
 	"video_server/logger"
+	"video_server/messagemodel"
 	"video_server/storagehandler"
+	"video_server/watermill"
 
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -62,4 +65,12 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Video uploaded successfully: %s", filename)
+
+	videoInfo := &messagemodel.VideoInfo{
+		VideoID: uuid.New().String(),
+		Title:   filename,
+		S3Key:   s3Key,
+	}
+
+	go watermill.PublishVideoUploaderEvent(videoInfo)
 }
