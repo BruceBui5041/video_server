@@ -2,7 +2,6 @@ package grpcserver
 
 import (
 	"context"
-	"log"
 	"video_server/logger"
 	"video_server/messagemodel"
 	pb "video_server/proto/video_service/video_service"
@@ -51,5 +50,5 @@ func RequestNewVideoUploaded(videoInfo *messagemodel.VideoInfo) {
 	}
 
 	// Handle the response
-	log.Printf("Response: %v", resp)
+	logger.AppLogger.Error("ProcessNewVideoRequest Response", zap.Any("req", req), zap.Any("resp", resp))
 }
