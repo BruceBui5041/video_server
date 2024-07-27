@@ -2,6 +2,7 @@ package watermill
 
 import (
 	"encoding/json"
+	"video_server/common"
 	"video_server/grpcserver"
 	"video_server/logger"
 	"video_server/messagemodel"
@@ -10,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func HandleNewVideoUpload(msg *message.Message) {
+func HandleNewVideoUpload(appCtx common.AppContext, msg *message.Message) {
 	var videoInfo *messagemodel.VideoInfo
 	err := json.Unmarshal(msg.Payload, &videoInfo)
 	if err != nil {
@@ -18,6 +19,6 @@ func HandleNewVideoUpload(msg *message.Message) {
 		return
 	}
 
-	go grpcserver.ProcessNewVideoRequest(videoInfo)
+	go grpcserver.ProcessNewVideoRequest(appCtx, videoInfo)
 	msg.Ack()
 }

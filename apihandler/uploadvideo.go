@@ -65,7 +65,7 @@ func UploadVideoHandler(appCtx common.AppContext) func(w http.ResponseWriter, r 
 			S3Key:       fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, slug),
 		}
 
-		err = watermill.PublishVideoUploadedEvent(videoInfo, file)
+		err = watermill.PublishVideoUploadedEvent(appCtx, videoInfo, file)
 		if err != nil {
 			logger.AppLogger.Error("publish video uploaded event", zap.Error(err), zap.String("filename", slug))
 			http.Error(w, "Failed to upload video", http.StatusInternalServerError)

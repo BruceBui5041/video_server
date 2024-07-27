@@ -4,11 +4,12 @@ import (
 	"context"
 	"log"
 	"video_server/appconst"
+	"video_server/common"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-func StartSubscribers() {
+func StartSubscribers(appCtx common.AppContext) {
 	// Define topics and their handlers
 	topicHandlers := map[string]MessageHandler{
 		appconst.TopicNewVideoUploaded: HandleNewVideoUpload,
@@ -19,7 +20,7 @@ func StartSubscribers() {
 	// Subscribe to all topics
 	messageChannels := make(map[string]<-chan *message.Message)
 	for topic := range topicHandlers {
-		messages, err := Publisher.Subscribe(context.Background(), topic)
+		messages, err := appCtx.GetLocalPublisher().Subscribe(context.Background(), topic)
 		if err != nil {
 			log.Fatalf("Failed to subscribe to topic %s: %v", topic, err)
 		}
@@ -27,16 +28,20 @@ func StartSubscribers() {
 	}
 
 	// Process messages from all topics
-	processMessages(messageChannels, topicHandlers)
+	processMessages(appCtx, messageChannels, topicHandlers)
 }
 
-func processMessages(messageChannels map[string]<-chan *message.Message, topicHandlers map[string]MessageHandler) {
+func processMessages(
+	appCtx common.AppContext,
+	messageChannels map[string]<-chan *message.Message,
+	topicHandlers map[string]MessageHandler,
+) {
 	for {
 		select {
 		case msg := <-messageChannels[appconst.TopicNewVideoUploaded]:
-			topicHandlers[appconst.TopicNewVideoUploaded](msg)
+			topicHandlers[appconst.TopicNewVideoUploaded](appCtx, msg)
 		case msg := <-messageChannels[appconst.TopicVideoProcessed]:
-			topicHandlers[appconst.TopicVideoProcessed](msg)
+			topicHandlers[appconst.TopicVideoProcessed](appCtx, msg)
 			// Add more cases for additional topics
 		}
 	}

@@ -3,6 +3,7 @@ package grpcserver
 import (
 	"context"
 	"fmt"
+	"video_server/common"
 	"video_server/logger"
 	"video_server/messagemodel"
 	pb "video_server/proto/video_service/video_service"
@@ -13,7 +14,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func OpenVideoProcessorClient() (pb.VideoServiceClient, *grpc.ClientConn) {
+func ConnectToVideoProcessingServer() (pb.VideoProcessingServiceClient, *grpc.ClientConn) {
 	// videoProcessorAddr := os.Getenv("VIDEO_PROCESSOR_ADDR")
 	videoProcessorAddr := "video-processor:50052"
 	// Set up a connection to the server.
@@ -23,15 +24,12 @@ func OpenVideoProcessorClient() (pb.VideoServiceClient, *grpc.ClientConn) {
 	}
 
 	// Create a new client
-	videoServiceClient := pb.NewVideoServiceClient(conn)
+	videoServiceClient := pb.NewVideoProcessingServiceClient(conn)
 
 	return videoServiceClient, conn
 }
 
-func ProcessNewVideoRequest(videoInfo *messagemodel.VideoInfo) error {
-	videoServiceClient, conn := OpenVideoProcessorClient()
-	defer conn.Close()
-
+func ProcessNewVideoRequest(appCtx common.AppContext, videoInfo *messagemodel.VideoInfo) error {
 	// Prepare the request
 	req := &pb.VideoInfo{
 		VideoId: videoInfo.VideoID,
@@ -40,7 +38,7 @@ func ProcessNewVideoRequest(videoInfo *messagemodel.VideoInfo) error {
 	}
 
 	// Call the gRPC method
-	resp, err := videoServiceClient.ProcessNewVideoRequest(context.Background(), req)
+	resp, err := appCtx.GetVideoProcessingClient().ProcessNewVideoRequest(context.Background(), req)
 	if err != nil {
 		logger.AppLogger.Error("ProcessNewVideoRequest failed", zap.Any("req", req), zap.Error(err))
 		return err

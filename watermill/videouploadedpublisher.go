@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"video_server/appconst"
+	"video_server/common"
 	"video_server/logger"
 	"video_server/messagemodel"
 	"video_server/storagehandler"
@@ -13,7 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func PublishVideoUploadedEvent(videoInfo *messagemodel.VideoInfo, file multipart.File) error {
+func PublishVideoUploadedEvent(
+	appCtx common.AppContext,
+	videoInfo *messagemodel.VideoInfo,
+	file multipart.File,
+) error {
 	// Marshal videoInfo into JSON
 	payload, err := json.Marshal(videoInfo)
 	if err != nil {
@@ -37,7 +42,7 @@ func PublishVideoUploadedEvent(videoInfo *messagemodel.VideoInfo, file multipart
 
 	// Create a Watermill message
 	watermillMsg := message.NewMessage(videoInfo.VideoID, payload)
-	err = Publisher.Publish(appconst.TopicNewVideoUploaded, watermillMsg)
+	err = appCtx.GetLocalPublisher().Publish(appconst.TopicNewVideoUploaded, watermillMsg)
 	if err != nil {
 		logger.AppLogger.Error(
 			fmt.Sprintf("Error publish %s", appconst.TopicNewVideoUploaded),

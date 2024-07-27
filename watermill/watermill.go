@@ -1,18 +1,17 @@
 package watermill
 
 import (
+	"video_server/common"
+
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 )
 
-// Global publisher
-var Publisher *gochannel.GoChannel
+type MessageHandler func(appCtx common.AppContext, msg *message.Message)
 
-type MessageHandler func(msg *message.Message)
-
-func init() {
-	Publisher = gochannel.NewGoChannel(
+func NewPubsubPublisher() *gochannel.GoChannel {
+	return gochannel.NewGoChannel(
 		gochannel.Config{},
 		watermill.NewStdLogger(false, false),
 	)

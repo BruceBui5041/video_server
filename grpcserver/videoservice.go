@@ -5,5 +5,5 @@ import (
 )
 
 type VideoServiceServer struct {
-	pb.UnimplementedVideoServiceServer
+	pb.UnimplementedVideoProcessingServiceServer
 }
