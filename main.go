@@ -4,20 +4,20 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
 	"os"
 	"video_server/apihandler"
 	"video_server/common"
 	"video_server/grpcserver"
 	"video_server/logger"
+	"video_server/model/user/usertransport"
 	"video_server/watermill"
 
-	// You'll need to create this package
 	pb "video_server/proto/video_service/video_service"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"github.com/rs/cors"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -62,47 +62,43 @@ func connectToDB() *gorm.DB {
 	if err != nil {
 		logger.AppLogger.Fatal(err.Error())
 	}
-	fmt.Println("Successfully connected to the database")
+
+	logger.AppLogger.Info(
+		"Successfully connected to the database",
+		zap.Any("dbUser", dbUser),
+		zap.Any("dbHost", dbHost),
+		zap.Any("dbPort", dbPort),
+		zap.Any("dbName", dbName),
+	)
+
 	return db
 }
 
 func startHTTPServer(appCtx common.AppContext) {
-	r := mux.NewRouter()
+	r := gin.Default()
 
-	c := cors.New(cors.Options{
-		AllowedOrigins:     []string{"*"},
-		AllowedMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:     []string{"*"},
-		AllowCredentials:   true,
-		ExposedHeaders:     []string{"Content-Length"},
-		MaxAge:             300,
-		OptionsPassthrough: true,
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
-		Debug: false,
-	})
-
-	// Apply CORS middleware to all routes
-	r.Use(c.Handler)
+	// Configure CORS
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	config.AllowHeaders = []string{"*"}
+	config.AllowCredentials = true
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.MaxAge = 300
+	r.Use(cors.New(config))
 
 	// Define your routes
-	r.HandleFunc("/segment/playlist/{name}", apihandler.GetPlaylistHandler(appCtx)).Methods("GET")
-	r.HandleFunc(
-		"/segment/playlist/{name}/{resolution}/{playlistName}",
-		apihandler.GetPlaylistHandler(appCtx),
-	).Methods("GET")
-	r.HandleFunc("/segment", apihandler.SegmentHandler(appCtx)).Methods("GET")
-	r.HandleFunc("/upload", apihandler.UploadVideoHandler(appCtx)).Methods("POST", "OPTIONS")
+	r.GET("/segment/playlist/:name", apihandler.GetPlaylistHandler(appCtx))
+	r.GET("/segment/playlist/:name/:resolution/:playlistName", apihandler.GetPlaylistHandler(appCtx))
+	r.GET("/segment", apihandler.SegmentHandler(appCtx))
+	r.POST("/upload", apihandler.UploadVideoHandler(appCtx))
 
-	// Create server
-	srv := &http.Server{
-		Handler: r, // Use the router directly, not wrapped in CORS handler
-		Addr:    ":3000",
-	}
+	r.POST("/register", usertransport.CreateUser(appCtx))
 
 	log.Println("Starting HTTP server on :3000")
-	log.Fatal(srv.ListenAndServe())
+	if err := r.Run(":3000"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
 
 func startGRPCServer() {
@@ -114,7 +110,6 @@ func startGRPCServer() {
 	s := grpc.NewServer()
 
 	// Register your gRPC services here
-	// For example:
 	pb.RegisterVideoProcessingServiceServer(s, &grpcserver.VideoServiceServer{})
 
 	log.Println("Starting gRPC server on :50051")

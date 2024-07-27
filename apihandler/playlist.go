@@ -10,22 +10,22 @@ import (
 	"video_server/logger"
 	"video_server/storagehandler"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-func GetPlaylistHandler(appCtx common.AppContext) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		videoName := vars["name"]
-		resolution := vars["resolution"]
-		playlistName := vars["playlistName"]
+func GetPlaylistHandler(appCtx common.AppContext) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		videoName := c.Param("name")
+		resolution := c.Param("resolution")
+		playlistName := c.Param("playlistName")
 
 		if videoName == "" {
 			logger.AppLogger.Error("Missing video name")
-			http.Error(w, "Missing video name", http.StatusBadRequest)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing video name"})
 			return
 		}
+
 		// Construct the key for the master playlist
 		key := filepath.Join("segments", videoName, "master.m3u8")
 
@@ -36,16 +36,23 @@ func GetPlaylistHandler(appCtx common.AppContext) func(w http.ResponseWriter, r 
 		playlist, err := storagehandler.GetFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
 		if err != nil {
 			logger.AppLogger.Error("Error getting playlist file", zap.Error(err), zap.String("key", key))
-			http.Error(w, fmt.Sprintf("Error getting playlist file: %v", err), http.StatusInternalServerError)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error getting playlist file: %v", err)})
 			return
 		}
 		defer playlist.Close()
 
-		w.Header().Set("Content-Type", "application/vnd.apple.mpegurl")
+		c.Header("Content-Type", "application/vnd.apple.mpegurl")
 
-		_, err = io.Copy(w, playlist)
-		if err != nil {
-			logger.AppLogger.Error("Error sending playlist file", zap.Error(err))
-		}
+		// Use c.Stream to handle the streaming of the playlist file
+		c.Stream(func(w io.Writer) bool {
+			_, err := io.Copy(w, playlist)
+			if err != nil {
+				logger.AppLogger.Error("Error streaming playlist file", zap.Error(err))
+				// In case of error, we can't modify headers or status code here,
+				// but we can log the error and return false to stop streaming
+				return false
+			}
+			return false // Return false to indicate we're done streaming
+		})
 	}
 }
