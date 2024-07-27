@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"fmt"
 	"video_server/logger"
 	"video_server/messagemodel"
 	pb "video_server/proto/video_service/video_service"
@@ -27,7 +28,7 @@ func OpenVideoProcessorClient() (pb.VideoServiceClient, *grpc.ClientConn) {
 	return videoServiceClient, conn
 }
 
-func RequestNewVideoUploaded(videoInfo *messagemodel.VideoInfo) {
+func ProcessNewVideoRequest(videoInfo *messagemodel.VideoInfo) error {
 	videoServiceClient, conn := OpenVideoProcessorClient()
 	defer conn.Close()
 
@@ -42,13 +43,15 @@ func RequestNewVideoUploaded(videoInfo *messagemodel.VideoInfo) {
 	resp, err := videoServiceClient.ProcessNewVideoRequest(context.Background(), req)
 	if err != nil {
 		logger.AppLogger.Error("ProcessNewVideoRequest failed", zap.Any("req", req), zap.Error(err))
-		return
+		return err
 	}
 
 	if resp.Status != codes.OK.String() {
 		logger.AppLogger.Error("ProcessNewVideoRequest resp err", zap.Any("req", req), zap.Any("resp", resp))
+		return fmt.Errorf("ProcessNewVideoRequest resp err. resp status %s", resp.Status)
 	}
 
 	// Handle the response
 	logger.AppLogger.Error("ProcessNewVideoRequest Response", zap.Any("req", req), zap.Any("resp", resp))
+	return nil
 }

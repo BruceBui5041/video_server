@@ -6,7 +6,6 @@ import (
 	"log"
 	"video_server/appconst"
 	"video_server/messagemodel"
-	"video_server/watermill"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -29,6 +28,6 @@ func StartRedisSubscribers(redisClient *redis.Client) {
 			continue
 		}
 
-		go watermill.PublishVideoUploadedEvent(videoInfo)
+		// go watermill.PublishVideoUploadedEvent(videoInfo)
 	}
 }

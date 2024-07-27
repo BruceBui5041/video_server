@@ -18,6 +18,6 @@ func HandleNewVideoUpload(msg *message.Message) {
 		return
 	}
 
-	go grpcserver.RequestNewVideoUploaded(videoInfo)
+	go grpcserver.ProcessNewVideoRequest(videoInfo)
 	msg.Ack()
 }

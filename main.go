@@ -95,5 +95,5 @@ func test(w http.ResponseWriter, r *http.Request) {
 		S3Key:   "s3Key",
 	}
 
-	go watermill.PublishVideoUploadedEvent(videoInfo)
+	go watermill.PublishVideoUploadedEvent(videoInfo, nil)
 }

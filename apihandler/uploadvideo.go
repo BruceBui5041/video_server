@@ -3,12 +3,10 @@ package apihandler
 import (
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"video_server/appconst"
 	"video_server/logger"
 	"video_server/messagemodel"
-	"video_server/storagehandler"
 	"video_server/watermill"
 
 	"github.com/google/uuid"
@@ -57,35 +55,21 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 		videoId = uuid.New().String()
 	}
 
-	filename := filepath.Base(header.Filename)
-	s3Key := fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, filename)
+	videoInfo := &messagemodel.VideoInfo{
+		VideoID:     videoId,
+		Title:       title,
+		Description: description,
+		Slug:        slug,
+		S3Key:       fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, slug),
+	}
 
-	err = storagehandler.UploadFileToS3(file, appconst.AWSVideoS3BuckerName, s3Key)
+	err = watermill.PublishVideoUploadedEvent(videoInfo, file)
 	if err != nil {
-		logger.AppLogger.Error("Failed to upload file to S3", zap.Error(err), zap.String("filename", filename))
+		logger.AppLogger.Error("publish video uploaded event", zap.Error(err), zap.String("filename", slug))
 		http.Error(w, "Failed to upload video", http.StatusInternalServerError)
 		return
 	}
 
-	logger.AppLogger.Info(
-		"Video uploaded successfully to S3",
-		zap.String("filename", filename),
-		zap.String("s3Key", s3Key),
-		zap.String("videoId", videoId),
-		zap.String("title", title),
-		zap.String("slug", slug),
-	)
-
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, "Video uploaded successfully: %s", filename)
-
-	videoInfo := &messagemodel.VideoInfo{
-		VideoID:     videoId,
-		Title:       title,
-		S3Key:       s3Key,
-		Description: description,
-		Slug:        slug,
-	}
-
-	go watermill.PublishVideoUploadedEvent(videoInfo)
+	fmt.Fprintf(w, "Video uploaded successfully: %s", slug)
 }

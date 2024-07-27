@@ -3,20 +3,32 @@ package watermill
 import (
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"video_server/appconst"
 	"video_server/logger"
 	"video_server/messagemodel"
+	"video_server/storagehandler"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"go.uber.org/zap"
 )
 
-func PublishVideoUploadedEvent(videoInfo *messagemodel.VideoInfo) error {
+func PublishVideoUploadedEvent(videoInfo *messagemodel.VideoInfo, file multipart.File) error {
 	// Marshal videoInfo into JSON
 	payload, err := json.Marshal(videoInfo)
 	if err != nil {
 		logger.AppLogger.Error(
 			"Error marshaling videoInfo to JSON",
+			zap.Any("videoInfo", videoInfo),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	err = storagehandler.UploadFileToS3(file, appconst.AWSVideoS3BuckerName, videoInfo.S3Key)
+	if err != nil {
+		logger.AppLogger.Error(
+			"Failed to upload video to S3",
 			zap.Any("videoInfo", videoInfo),
 			zap.Error(err),
 		)
