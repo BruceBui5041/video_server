@@ -8,4 +8,5 @@ type VideoInfo struct {
 	UploadedBy  string `json:"uploaded_by"`
 	Timestamp   int64  `json:"timestamp"`
 	S3Key       string `json:"s3key"`
+	Slug        string `json:"slug"`
 }

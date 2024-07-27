@@ -47,7 +47,7 @@ func startHTTPServer() {
 		AllowOriginFunc: func(origin string) bool {
 			return true
 		},
-		Debug: true,
+		Debug: false,
 	})
 
 	// Apply CORS middleware to all routes

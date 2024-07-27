@@ -20,14 +20,14 @@ const maxUploadSize = 1000 << 20 // 1000 MB
 func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.ContentLength > maxUploadSize {
 		logger.AppLogger.Error("File too large")
-		http.Error(w, "File too large. Max size is 100MB", http.StatusRequestEntityTooLarge)
+		http.Error(w, "File too large. Max size is 1000MB", http.StatusRequestEntityTooLarge)
 		return
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 		logger.AppLogger.Error("Failed to parse multipart form", zap.Error(err))
-		http.Error(w, "File too large. Max size is 100MB", http.StatusRequestEntityTooLarge)
+		http.Error(w, "File too large. Max size is 1000MB", http.StatusRequestEntityTooLarge)
 		return
 	}
 
@@ -47,6 +47,16 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Extract additional fields
+	videoId := r.FormValue("videoId")
+	title := r.FormValue("title")
+	description := r.FormValue("description")
+	slug := r.FormValue("slug")
+
+	if videoId == "" {
+		videoId = uuid.New().String()
+	}
+
 	filename := filepath.Base(header.Filename)
 	s3Key := fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, filename)
 
@@ -61,15 +71,20 @@ func UploadVideoHandler(w http.ResponseWriter, r *http.Request) {
 		"Video uploaded successfully to S3",
 		zap.String("filename", filename),
 		zap.String("s3Key", s3Key),
+		zap.String("videoId", videoId),
+		zap.String("title", title),
+		zap.String("slug", slug),
 	)
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "Video uploaded successfully: %s", filename)
 
 	videoInfo := &messagemodel.VideoInfo{
-		VideoID: uuid.New().String(),
-		Title:   filename,
-		S3Key:   s3Key,
+		VideoID:     videoId,
+		Title:       title,
+		S3Key:       s3Key,
+		Description: description,
+		Slug:        slug,
 	}
 
 	go watermill.PublishVideoUploadedEvent(videoInfo)

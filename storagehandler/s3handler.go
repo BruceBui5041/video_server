@@ -18,7 +18,7 @@ import (
 	"go.uber.org/zap"
 )
 
-var AWSSession *session.Session
+var awsSession *session.Session
 
 func init() {
 	// Load the .env file
@@ -43,13 +43,13 @@ func init() {
 		logger.AppLogger.Fatal("Failed to create AWS session", zap.Error(err))
 	}
 
-	AWSSession = sess
+	awsSession = sess
 	logger.AppLogger.Info("AWS session created successfully")
 }
 
 func GetS3File(bucket, key string) (io.ReadCloser, error) {
 	// Create an S3 service client
-	svc := s3.New(AWSSession)
+	svc := s3.New(awsSession)
 
 	// Create the GetObject request
 	input := &s3.GetObjectInput{
@@ -70,7 +70,7 @@ func GetS3File(bucket, key string) (io.ReadCloser, error) {
 
 func UploadFileToS3(file io.Reader, bucket, key string) error {
 	// Create an S3 service client
-	svc := s3.New(AWSSession)
+	svc := s3.New(awsSession)
 
 	// Read the entire file into a buffer
 	buf := new(bytes.Buffer)
