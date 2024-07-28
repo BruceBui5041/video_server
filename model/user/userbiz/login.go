@@ -3,76 +3,72 @@ package userbiz
 import (
 	"context"
 	"video_server/common"
+	"video_server/component"
+	"video_server/component/hasher"
+	"video_server/component/tokenprovider"
+	models "video_server/model"
 	"video_server/model/user/usermodel"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginStorage interface {
-	FindUser(ctx context.Context, conditions map[string]interface{}) (*usermodel.User, error)
+	FindUser(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*models.User, error)
 }
+
+// type TokenConfig interface {
+// 	GetAtExp() int
+// 	GetRtExp() int
+// }
 
 type loginBusiness struct {
-	storeUser     LoginStorage
-	hasher        Hasher
-	tokenProvider TokenProvider
+	appCtx        component.AppContext
+	loginStorage  LoginStorage
+	tokenProvider tokenprovider.Provider
+	hasher        hasher.Hasher
+	expiry        int
 }
 
-func NewLoginBusiness(storeUser LoginStorage, hasher Hasher, tokenProvider TokenProvider) *loginBusiness {
+func NewLoginBusiness(
+	storeUser LoginStorage,
+	tokenProvicer tokenprovider.Provider,
+	hasher hasher.Hasher,
+	expiry int,
+) *loginBusiness {
 	return &loginBusiness{
-		storeUser:     storeUser,
+		loginStorage:  storeUser,
+		tokenProvider: tokenProvicer,
 		hasher:        hasher,
-		tokenProvider: tokenProvider,
+		expiry:        expiry,
 	}
 }
 
-func (business *loginBusiness) Login(ctx context.Context, data *usermodel.UserLogin) (*common.Token, error) {
-	user, err := business.storeUser.FindUser(ctx, map[string]interface{}{"email": data.Email})
+func (business *loginBusiness) Login(ctx context.Context, data *usermodel.UserLogin) (*tokenprovider.Token, error) {
+	user, err := business.loginStorage.FindUser(ctx, map[string]interface{}{"email": data.Email})
 
 	if err != nil {
-		return nil, common.ErrCannotGetEntity(usermodel.EntityName, err)
+		return nil, usermodel.ErrUsernameOrPasswordInvalid
 	}
 
-	passHashed := user.Password
-
-	if err := business.hasher.ComparePassword(passHashed, data.Password); err != nil {
-		return nil, common.ErrEmailOrPasswordInvalid
+	pwdHashed := business.hasher.Hash(data.Password + user.Salt)
+	if user.Password != pwdHashed {
+		return nil, usermodel.ErrUsernameOrPasswordInvalid
 	}
 
-	payload := common.TokenPayload{
-		UserId: user.Id,
-		Role:   user.Role,
+	payload := tokenprovider.TokenPayload{
+		UserId: int(user.Id),
+		Roles:  user.Roles,
 	}
 
-	accessToken, err := business.tokenProvider.Generate(payload, common.AccessTokenExpiry)
-	if err != nil {
-		return nil, common.ErrInternal(err)
-	}
-
-	refreshToken, err := business.tokenProvider.Generate(payload, common.RefreshTokenExpiry)
+	accessToken, err := business.tokenProvider.Generate(payload, business.expiry)
 	if err != nil {
 		return nil, common.ErrInternal(err)
 	}
 
-	account := common.NewAccount(accessToken, refreshToken)
+	// refreshToken, err := business.tokenProvider.Generate(payload, business.tokenConfig.GetRtExp())
+	// if err != nil {
+	// 	return nil, common.ErrInternal(err)
+	// }
 
-	return account, nil
-}
+	// account := usermodel.NewAccount(accessToken, refreshToken)
 
-type Hasher interface {
-	ComparePassword(hashedPassword, password string) error
-}
-
-type TokenProvider interface {
-	Generate(data common.TokenPayload, expiry int) (*common.Token, error)
-}
-
-type hasher struct{}
-
-func NewHasher() *hasher {
-	return &hasher{}
-}
-
-func (h *hasher) ComparePassword(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return accessToken, nil
 }

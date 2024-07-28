@@ -2,12 +2,12 @@ package watermill
 
 import (
 	"fmt"
-	"video_server/common"
+	"video_server/component"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-func HandleVideoProcessed(appCtx common.AppContext, msg *message.Message) {
+func HandleVideoProcessed(appCtx component.AppContext, msg *message.Message) {
 	videoID := string(msg.Payload)
 	fmt.Printf("Video processed: %s\n", videoID)
 	// Add your processing logic here

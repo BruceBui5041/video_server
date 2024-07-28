@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"video_server/appconst"
-	"video_server/common"
+	"video_server/component"
 	"video_server/logger"
 	"video_server/storagehandler"
 
@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func GetPlaylistHandler(appCtx common.AppContext) gin.HandlerFunc {
+func GetPlaylistHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		videoName := c.Param("name")
 		resolution := c.Param("resolution")

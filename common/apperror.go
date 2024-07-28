@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+var (
+	RecordNotFound = errors.New("record not found")
+)
+
 type AppError struct {
 	StatusCode int    `json:"status_code"`
 	RootErr    error  `json:"-"` // NOTE: Nhu vầy là không cho response về client "-"

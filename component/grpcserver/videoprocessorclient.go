@@ -3,7 +3,7 @@ package grpcserver
 import (
 	"context"
 	"fmt"
-	"video_server/common"
+	"video_server/component"
 	"video_server/logger"
 	"video_server/messagemodel"
 	pb "video_server/proto/video_service/video_service"
@@ -29,7 +29,7 @@ func ConnectToVideoProcessingServer() (pb.VideoProcessingServiceClient, *grpc.Cl
 	return videoServiceClient, conn
 }
 
-func ProcessNewVideoRequest(appCtx common.AppContext, videoInfo *messagemodel.VideoInfo) error {
+func ProcessNewVideoRequest(appCtx component.AppContext, videoInfo *messagemodel.VideoInfo) error {
 	// Prepare the request
 	req := &pb.VideoInfo{
 		VideoId: videoInfo.VideoID,

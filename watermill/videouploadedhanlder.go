@@ -2,8 +2,8 @@ package watermill
 
 import (
 	"encoding/json"
-	"video_server/common"
-	"video_server/grpcserver"
+	"video_server/component"
+	"video_server/component/grpcserver"
 	"video_server/logger"
 	"video_server/messagemodel"
 
@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func HandleNewVideoUpload(appCtx common.AppContext, msg *message.Message) {
+func HandleNewVideoUpload(appCtx component.AppContext, msg *message.Message) {
 	var videoInfo *messagemodel.VideoInfo
 	err := json.Unmarshal(msg.Payload, &videoInfo)
 	if err != nil {

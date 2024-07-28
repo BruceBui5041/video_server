@@ -4,12 +4,12 @@ import (
 	"context"
 	"log"
 	"video_server/appconst"
-	"video_server/common"
+	"video_server/component"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 )
 
-func StartSubscribers(appCtx common.AppContext) {
+func StartSubscribers(appCtx component.AppContext) {
 	// Define topics and their handlers
 	topicHandlers := map[string]MessageHandler{
 		appconst.TopicNewVideoUploaded: HandleNewVideoUpload,
@@ -32,7 +32,7 @@ func StartSubscribers(appCtx common.AppContext) {
 }
 
 func processMessages(
-	appCtx common.AppContext,
+	appCtx component.AppContext,
 	messageChannels map[string]<-chan *message.Message,
 	topicHandlers map[string]MessageHandler,
 ) {

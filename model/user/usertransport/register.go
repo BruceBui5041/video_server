@@ -2,7 +2,7 @@ package usertransport
 
 import (
 	"net/http"
-	"video_server/common"
+	"video_server/component"
 	"video_server/model/user/userbiz"
 	user "video_server/model/user/usermodel"
 	"video_server/model/user/userstore"
@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateUser(appCtx common.AppContext) gin.HandlerFunc {
+func RegisterHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var input user.CreateUser
 

@@ -43,7 +43,7 @@ func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) (*
 
 	// Create user authentication entry
 	auth := models.UserAuth{
-		UserID:            newUser.UserID,
+		UserID:            newUser.Id,
 		AuthType:          input.AuthType,
 		AuthProviderID:    input.AuthProviderID,
 		AuthProviderToken: input.AuthProviderToken,
@@ -70,7 +70,7 @@ func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) (*
 	}
 
 	// Assign default role (assuming 'user' role exists with ID 1)
-	if err := tx.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", newUser.UserID, 1).Error; err != nil {
+	if err := tx.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", newUser.Id, 1).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}

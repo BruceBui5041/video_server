@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"video_server/appconst"
-	"video_server/common"
+	"video_server/component"
 	"video_server/logger"
 	"video_server/messagemodel"
 	"video_server/watermill"
@@ -17,7 +17,7 @@ import (
 
 const maxUploadSize = 1000 << 20 // 1000 MB
 
-func UploadVideoHandler(appCtx common.AppContext) gin.HandlerFunc {
+func UploadVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Set max size for the entire request body
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadSize)

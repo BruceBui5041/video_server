@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"video_server/appconst"
-	"video_server/common"
+	"video_server/component"
 	"video_server/logger"
 	"video_server/messagemodel"
 	"video_server/storagehandler"
@@ -15,7 +15,7 @@ import (
 )
 
 func PublishVideoUploadedEvent(
-	appCtx common.AppContext,
+	appCtx component.AppContext,
 	videoInfo *messagemodel.VideoInfo,
 	file multipart.File,
 ) error {

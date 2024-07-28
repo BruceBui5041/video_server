@@ -6,8 +6,8 @@ import (
 	"net"
 	"os"
 	"video_server/apihandler"
-	"video_server/common"
-	"video_server/grpcserver"
+	"video_server/component"
+	"video_server/component/grpcserver"
 	"video_server/logger"
 	"video_server/model/user/usertransport"
 	"video_server/watermill"
@@ -28,13 +28,16 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	jwtSecretKey := os.Getenv("JWTSecretKey")
+
 	client, conn := grpcserver.ConnectToVideoProcessingServer()
 	defer conn.Close()
 
-	appContext := common.NewAppContext(
+	appContext := component.NewAppContext(
 		connectToDB(),
 		watermill.NewPubsubPublisher(),
 		client,
+		jwtSecretKey,
 	)
 
 	go watermill.StartSubscribers(appContext)
@@ -74,7 +77,7 @@ func connectToDB() *gorm.DB {
 	return db
 }
 
-func startHTTPServer(appCtx common.AppContext) {
+func startHTTPServer(appCtx component.AppContext) {
 	r := gin.Default()
 
 	// Configure CORS
@@ -93,7 +96,8 @@ func startHTTPServer(appCtx common.AppContext) {
 	r.GET("/segment", apihandler.SegmentHandler(appCtx))
 	r.POST("/upload", apihandler.UploadVideoHandler(appCtx))
 
-	r.POST("/register", usertransport.CreateUser(appCtx))
+	r.POST("/login", usertransport.Login(appCtx))
+	r.POST("/register", usertransport.RegisterHandler(appCtx))
 
 	log.Println("Starting HTTP server on :3000")
 	if err := r.Run(":3000"); err != nil {
