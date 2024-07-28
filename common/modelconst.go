@@ -3,10 +3,10 @@ package common
 import "time"
 
 const (
-	DbTypeRestaurant = 1
-	DbTypeFood       = 2
-	DbTypeCategory   = 3
-	DbTypeUser       = 4
+	DbTypeVideo  = 1
+	DbTypeCourse = 2
+	DbTypeTag    = 3
+	DbTypeUser   = 4
 )
 
 const (

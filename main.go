@@ -114,6 +114,7 @@ func startHTTPServer(appCtx component.AppContext) {
 	r.GET("/segment/playlist/:name", apihandler.GetPlaylistHandler(appCtx))
 	r.GET("/segment/playlist/:name/:resolution/:playlistName", apihandler.GetPlaylistHandler(appCtx))
 	r.GET("/segment", apihandler.SegmentHandler(appCtx))
+
 	r.POST("/upload",
 		middleware.RequiredAuth(appCtx),
 		apihandler.UploadVideoHandler(appCtx),

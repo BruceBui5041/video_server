@@ -5,8 +5,8 @@ import "video_server/common"
 // CreateUser represents the data needed to create a new user
 type CreateUser struct {
 	common.SQLModel   `json:",inline"`
-	LastName          string `json:"lastname" gorm:"column:lastname;"`
-	FirstName         string `json:"firstname" gorm:"column:firstname;"`
+	LastName          string `json:"lastname"`
+	FirstName         string `json:"firstname"`
 	Email             string `json:"email"`
 	Password          string `json:"password,omitempty"`
 	Salt              string `json:"salt,omitempty"`

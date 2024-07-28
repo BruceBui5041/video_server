@@ -5,7 +5,7 @@ type VideoInfo struct {
 	VideoID     string `json:"video_id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
-	UploadedBy  string `json:"uploaded_by"`
+	OwnerId     int    `json:"owner_id"`
 	Timestamp   int64  `json:"timestamp"`
 	S3Key       string `json:"s3key"`
 	Slug        string `json:"slug"`

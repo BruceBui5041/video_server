@@ -25,5 +25,4 @@ func (User) TableName() string {
 
 func (u *User) Mask(isAdmin bool) {
 	u.GenUID(common.DbTypeUser)
-	return
 }

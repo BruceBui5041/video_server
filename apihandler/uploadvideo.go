@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"video_server/appconst"
+	"video_server/common"
 	"video_server/component"
 	"video_server/logger"
 	"video_server/messagemodel"
@@ -19,6 +20,8 @@ const maxUploadSize = 1000 << 20 // 1000 MB
 
 func UploadVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		requester := c.MustGet(common.CurrentUser).(common.Requester)
+
 		// Set max size for the entire request body
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadSize)
 
@@ -29,14 +32,14 @@ func UploadVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		// Get file from request
-		file, header, err := c.Request.FormFile("video")
+		// Get video from request
+		video, header, err := c.Request.FormFile("video")
 		if err != nil {
 			logger.AppLogger.Error("Failed to get file from request", zap.Error(err))
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		defer file.Close()
+		defer video.Close()
 
 		// Check if the file is a video
 		contentType := header.Header.Get("Content-Type")
@@ -62,9 +65,10 @@ func UploadVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 			Description: description,
 			Slug:        slug,
 			S3Key:       fmt.Sprintf("%s/%s", appconst.RawVideoS3Key, slug),
+			OwnerId:     requester.GetUserId(),
 		}
 
-		err = watermill.PublishVideoUploadedEvent(appCtx, videoInfo, file)
+		err = watermill.PublishVideoUploadedEvent(appCtx, videoInfo, video)
 		if err != nil {
 			logger.AppLogger.Error("publish video uploaded event", zap.Error(err), zap.String("filename", slug))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video"})
