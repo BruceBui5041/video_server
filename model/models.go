@@ -4,26 +4,10 @@ import (
 	"time"
 )
 
-type Role struct {
-	RoleID      uint   `gorm:"primaryKey;autoIncrement"`
-	Name        string `gorm:"uniqueIndex;not null;size:50"`
-	Description string
-	Users       []User `gorm:"many2many:user_roles;"`
-}
-
 type Permission struct {
 	PermissionID uint   `gorm:"primaryKey;autoIncrement"`
 	Name         string `gorm:"uniqueIndex;not null;size:50"`
 	Description  string
-}
-
-type UserAuth struct {
-	AuthID            uint   `gorm:"primaryKey;autoIncrement"`
-	UserID            uint   `gorm:"index"`
-	AuthType          string `gorm:"not null;size:20"`
-	AuthProviderID    string `gorm:"size:255"`
-	AuthProviderToken string
-	User              User `gorm:"constraint:OnDelete:CASCADE;"`
 }
 
 type Category struct {
@@ -34,7 +18,7 @@ type Category struct {
 }
 
 type Course struct {
-	CourseID    uint   `gorm:"primaryKey;autoIncrement"`
+	Id          uint   `gorm:"primaryKey;autoIncrement"`
 	Title       string `gorm:"not null;size:255"`
 	Description string
 	CreatedAt   time.Time `gorm:"autoCreateTime"`

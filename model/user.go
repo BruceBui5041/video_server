@@ -1,17 +1,19 @@
 package models
 
-import "time"
+import (
+	"video_server/common"
+)
 
 type User struct {
-	Id                uint      `gorm:"primaryKey;autoIncrement"`
-	Username          string    `gorm:"uniqueIndex;not null;size:50"`
-	Email             string    `gorm:"uniqueIndex;not null;size:100"`
-	CreatedAt         time.Time `gorm:"autoCreateTime"`
-	IsActive          bool      `gorm:"default:true"`
-	ProfilePictureURL string    `gorm:"size:255"`
-	Roles             []Role    `gorm:"many2many:user_roles;"`
-	Auths             []UserAuth
-	CreatedCourses    []Course `gorm:"foreignKey:CreatorID"`
+	common.SQLModel   `json:",inline"`
+	LastName          string     `json:"lastname" gorm:"column:lastname;"`
+	FirstName         string     `json:"firstname" gorm:"column:firstname;"`
+	Email             string     `gorm:"column:email;uniqueIndex;not null;size:100"`
+	IsActive          bool       `gorm:"column:is_active;default:true"`
+	ProfilePictureURL string     `gorm:"column:profile_picture_url;size:255"`
+	Roles             []Role     `gorm:"many2many:user_role;"`
+	Auths             []UserAuth `gorm:"foreignKey:UserID"`
+	CreatedCourses    []Course   `gorm:"foreignKey:CreatorID"`
 	Enrollments       []Enrollment
 	Progress          []Progress
 	Salt              string `json:"-" gorm:"column:salt;"`
@@ -20,4 +22,9 @@ type User struct {
 
 func (User) TableName() string {
 	return "user"
+}
+
+func (u *User) Mask(isAdmin bool) {
+	u.GenUID(common.DbTypeUser)
+	return
 }

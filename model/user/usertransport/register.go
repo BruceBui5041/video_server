@@ -2,38 +2,36 @@ package usertransport
 
 import (
 	"net/http"
+	"video_server/common"
 	"video_server/component"
+	"video_server/component/hasher"
 	"video_server/model/user/userbiz"
-	user "video_server/model/user/usermodel"
+	"video_server/model/user/usermodel"
 	"video_server/model/user/userstore"
 
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterHandler(appCtx component.AppContext) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var input user.CreateUser
+func Register(appCtx component.AppContext) func(*gin.Context) {
+	return func(ctx *gin.Context) {
+		db := appCtx.GetMainDBConnection()
+		var data usermodel.CreateUser
 
-		// Decode the request body
-		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-			return
+		if err := ctx.ShouldBind(&data); err != nil {
+			panic(err)
 		}
 
-		userstore := userstore.NewSQLStore(appCtx.GetMainDBConnection())
-		userBiz := userbiz.NewRegisterBusiness(userstore)
+		store := userstore.NewSQLStore(db)
+		md5 := hasher.NewMD5Hash()
+		business := userbiz.NewRegisterBusiness(store, md5)
 
-		// Create the user
-		newUser, err := userBiz.RegisterUser(c.Request.Context(), &input)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
+		if err := business.RegisterUser(ctx, &data); err != nil {
+			panic(err)
 		}
 
-		// Prepare and send the response
-		c.JSON(http.StatusCreated, gin.H{
-			"username": newUser.Username,
-			"email":    newUser.Email,
-		})
+		data.Mask(false)
+
+		ctx.JSON(http.StatusCreated, common.SimpleSuccessResponse(data.FakeId.String()))
+
 	}
 }

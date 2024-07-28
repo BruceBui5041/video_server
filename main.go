@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 	"video_server/apihandler"
 	"video_server/component"
 	"video_server/component/grpcserver"
@@ -21,6 +22,7 @@ import (
 	"google.golang.org/grpc"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	gormlogger "gorm.io/gorm/logger"
 )
 
 func main() {
@@ -61,7 +63,21 @@ func connectToDB() *gorm.DB {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		dbUser, dbPassword, dbHost, dbPort, dbName)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	newLogger := gormlogger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		gormlogger.Config{
+			SlowThreshold:             time.Second,     // Slow SQL threshold
+			LogLevel:                  gormlogger.Info, // Log level
+			IgnoreRecordNotFoundError: true,            // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      false,           // Don't include params in the SQL log
+			Colorful:                  true,            // Disable color
+		},
+	)
+
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+		Logger: newLogger,
+	})
+
 	if err != nil {
 		logger.AppLogger.Fatal(err.Error())
 	}
@@ -97,7 +113,7 @@ func startHTTPServer(appCtx component.AppContext) {
 	r.POST("/upload", apihandler.UploadVideoHandler(appCtx))
 
 	r.POST("/login", usertransport.Login(appCtx))
-	r.POST("/register", usertransport.RegisterHandler(appCtx))
+	r.POST("/register", usertransport.Register(appCtx))
 
 	log.Println("Starting HTTP server on :3000")
 	if err := r.Run(":3000"); err != nil {

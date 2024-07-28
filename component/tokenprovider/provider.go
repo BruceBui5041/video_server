@@ -20,7 +20,7 @@ type Token struct {
 
 type TokenPayload struct {
 	UserId int           `json:"user_id"`
-	Roles  []models.Role `gorm:"many2many:user_roles;"`
+	Roles  []models.Role `gorm:"many2many:user_role;"`
 }
 
 var (

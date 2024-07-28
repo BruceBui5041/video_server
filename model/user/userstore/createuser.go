@@ -3,42 +3,43 @@ package userstore
 import (
 	"context"
 	"errors"
-	"time"
 	models "video_server/model"
 	user "video_server/model/user/usermodel"
 
 	"gorm.io/gorm"
 )
 
-func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) (*models.User, error) {
+func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) error {
 	// Start a transaction
 	tx := s.db.Begin()
 	if tx.Error != nil {
-		return nil, tx.Error
+		return tx.Error
 	}
 
 	// Check if user already exists
 	var existingUser models.User
 	if err := tx.Where("email = ?", input.Email).First(&existingUser).Error; err == nil {
 		tx.Rollback()
-		return nil, errors.New("user with this email already exists")
+		return errors.New("user with this email already exists")
 	} else if err != gorm.ErrRecordNotFound {
 		tx.Rollback()
-		return nil, err
+		return err
 	}
 
 	// Create new user
 	newUser := models.User{
-		Username:          input.Username,
+		FirstName:         input.FirstName,
+		LastName:          input.LastName,
 		Email:             input.Email,
 		ProfilePictureURL: input.ProfilePictureURL,
-		CreatedAt:         time.Now(),
+		Password:          input.Password,
+		Salt:              input.Salt,
 		IsActive:          true,
 	}
 
 	if err := tx.Create(&newUser).Error; err != nil {
 		tx.Rollback()
-		return nil, err
+		return err
 	}
 
 	// Create user authentication entry
@@ -50,10 +51,10 @@ func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) (*
 	}
 
 	// If it's a local auth type, we need to hash the password
-	if input.AuthType == "local" {
+	if input.AuthType == "password" {
 		if input.Password == "" {
 			tx.Rollback()
-			return nil, errors.New("password is required for local authentication")
+			return errors.New("password is required for local authentication")
 		}
 		// TODO: Implement password hashing
 		// hashedPassword, err := hashPassword(input.Password)
@@ -66,19 +67,19 @@ func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) (*
 
 	if err := tx.Create(&auth).Error; err != nil {
 		tx.Rollback()
-		return nil, err
+		return err
 	}
 
 	// Assign default role (assuming 'user' role exists with ID 1)
-	if err := tx.Exec("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", newUser.Id, 1).Error; err != nil {
+	if err := tx.Exec("INSERT INTO user_role (user_id, role_id) VALUES (?, ?)", newUser.Id, 1).Error; err != nil {
 		tx.Rollback()
-		return nil, err
+		return err
 	}
 
 	// Commit the transaction
 	if err := tx.Commit().Error; err != nil {
-		return nil, err
+		return err
 	}
 
-	return &newUser, nil
+	return nil
 }
