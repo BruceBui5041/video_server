@@ -2,6 +2,7 @@ package usertransport
 
 import (
 	"net/http"
+	"time"
 	"video_server/common"
 	"video_server/component"
 	"video_server/component/hasher"
@@ -34,6 +35,20 @@ func Login(appCtx component.AppContext) gin.HandlerFunc {
 		if err != nil {
 			panic(err)
 		}
+
+		// Set the access token as a cookie
+		cookie := &http.Cookie{
+			Name:     "access_token",
+			Value:    account.Token,
+			HttpOnly: true,
+			Secure:   false, // Set to true if using HTTPS
+			// SameSite: http.SameSiteStrictMode,
+			SameSite: http.SameSiteLaxMode,
+			Path:     "/",
+			Domain:   "localhost",
+			Expires:  time.Now().Add(30 * 24 * time.Hour), // 30 days expiration
+		}
+		http.SetCookie(ctx.Writer, cookie)
 
 		ctx.JSON(http.StatusOK, common.SimpleSuccessResponse(account))
 	}

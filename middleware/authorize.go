@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"errors"
-	"strings"
 	"video_server/common"
 	"video_server/component"
 	"video_server/component/tokenprovider/jwt"
@@ -15,23 +14,14 @@ func ErrWrongAuthHeader(err error) *common.AppError {
 	return common.NewCustomError(err, "wrong authen header", "ErrWrongAuthHeader")
 }
 
-func extractTokenFromHeaderString(s string) (string, error) {
-	parts := strings.Split(s, " ")
-
-	if parts[0] != "Bearer" || len(parts) < 2 || strings.TrimSpace(parts[1]) == "" {
-		return "", ErrWrongAuthHeader(errors.New("wrong authen header"))
-	}
-
-	return parts[1], nil
-}
-
 func RequiredAuth(appCtx component.AppContext) func(ctx *gin.Context) {
 	jwtProvider := jwt.NewTokenJWTProvider(appCtx.SecretKey())
 	return func(ctx *gin.Context) {
-		token, err := extractTokenFromHeaderString(ctx.GetHeader("Authorization"))
+		// Get the access_token from the cookie
+		token, err := ctx.Cookie("access_token")
 
 		if err != nil {
-			panic(err)
+			panic(ErrWrongAuthHeader(errors.New("access_token cookie not found")))
 		}
 
 		payload, err := jwtProvider.Validate(token)
@@ -48,8 +38,8 @@ func RequiredAuth(appCtx component.AppContext) func(ctx *gin.Context) {
 			panic(err)
 		}
 
-		if user.Status == 0 {
-			panic(common.ErrNoPermission(errors.New("Account unavailable")))
+		if user.Status != common.StatusActive {
+			panic(common.ErrNoPermission(errors.New("account unavailable")))
 		}
 
 		user.Mask(false)

@@ -3,7 +3,6 @@ package userbiz
 import (
 	"context"
 	"video_server/common"
-	"video_server/component"
 	"video_server/component/hasher"
 	"video_server/component/tokenprovider"
 	models "video_server/model"
@@ -20,7 +19,6 @@ type LoginStorage interface {
 // }
 
 type loginBusiness struct {
-	appCtx        component.AppContext
 	loginStorage  LoginStorage
 	tokenProvider tokenprovider.Provider
 	hasher        hasher.Hasher

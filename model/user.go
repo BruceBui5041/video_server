@@ -9,7 +9,6 @@ type User struct {
 	LastName          string     `json:"lastname" gorm:"column:lastname;"`
 	FirstName         string     `json:"firstname" gorm:"column:firstname;"`
 	Email             string     `gorm:"column:email;uniqueIndex;not null;size:100"`
-	IsActive          bool       `gorm:"column:is_active;default:true"`
 	ProfilePictureURL string     `gorm:"column:profile_picture_url;size:255"`
 	Roles             []Role     `gorm:"many2many:user_role;"`
 	Auths             []UserAuth `gorm:"foreignKey:UserID"`

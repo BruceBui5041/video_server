@@ -9,6 +9,12 @@ const (
 	DbTypeUser       = 4
 )
 
+const (
+	StatusActive    = "active"
+	StatusInactive  = "inactive"
+	StatusSuspended = "suspended"
+)
+
 const CurrentUser = "user"
 
 type Requester interface {
@@ -20,7 +26,7 @@ type Requester interface {
 type SQLModel struct {
 	Id        uint       `json:"-" gorm:"column,id;"`
 	FakeId    *UID       `json:"id" gorm:"-"`
-	Status    int        `json:"status" gorm:"column:status;default:1;"`
+	Status    string     `json:"status" gorm:"column:status;type:ENUM('active','inactive','suspended');default:active"`
 	CreatedAt *time.Time `json:"created_at,omitempty" gorm:"column,created_at;"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty" gorm:"column,updated_at;"`
 }

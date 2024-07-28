@@ -34,7 +34,6 @@ func (s *sqlStore) CreateNewUser(ctx context.Context, input *user.CreateUser) er
 		ProfilePictureURL: input.ProfilePictureURL,
 		Password:          input.Password,
 		Salt:              input.Salt,
-		IsActive:          true,
 	}
 
 	if err := tx.Create(&newUser).Error; err != nil {

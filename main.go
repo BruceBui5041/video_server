@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"time"
 	"video_server/apihandler"
+	"video_server/common"
 	"video_server/component"
 	"video_server/component/grpcserver"
 	"video_server/logger"
+	"video_server/middleware"
 	"video_server/model/user/usertransport"
 	"video_server/watermill"
 
@@ -98,11 +101,12 @@ func startHTTPServer(appCtx component.AppContext) {
 
 	// Configure CORS
 	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
-	config.AllowHeaders = []string{"*"}
+	// config.AllowAllOrigins = true
+	config.AllowOrigins = []string{"http://localhost:8080"}
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	// config.AllowHeaders = []string{"http://localhost:8080"}
 	config.AllowCredentials = true
-	config.ExposeHeaders = []string{"Content-Length"}
+	config.ExposeHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	config.MaxAge = 300
 	r.Use(cors.New(config))
 
@@ -110,7 +114,14 @@ func startHTTPServer(appCtx component.AppContext) {
 	r.GET("/segment/playlist/:name", apihandler.GetPlaylistHandler(appCtx))
 	r.GET("/segment/playlist/:name/:resolution/:playlistName", apihandler.GetPlaylistHandler(appCtx))
 	r.GET("/segment", apihandler.SegmentHandler(appCtx))
-	r.POST("/upload", apihandler.UploadVideoHandler(appCtx))
+	r.POST("/upload",
+		middleware.RequiredAuth(appCtx),
+		apihandler.UploadVideoHandler(appCtx),
+	)
+
+	r.GET("/checkauth", middleware.RequiredAuth(appCtx), func(c *gin.Context) {
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse("ok"))
+	})
 
 	r.POST("/login", usertransport.Login(appCtx))
 	r.POST("/register", usertransport.Register(appCtx))
