@@ -18,7 +18,7 @@ const (
 const CurrentUser = "user"
 
 type Requester interface {
-	GetUserId() int
+	GetUserId() uint
 	GetEmail() string
 	GetRole() string
 }

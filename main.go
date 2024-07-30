@@ -13,6 +13,7 @@ import (
 	"video_server/component/grpcserver"
 	"video_server/logger"
 	"video_server/middleware"
+	"video_server/model/course/coursetransport"
 	"video_server/model/user/usertransport"
 	"video_server/watermill"
 
@@ -104,16 +105,24 @@ func startHTTPServer(appCtx component.AppContext) {
 	// config.AllowAllOrigins = true
 	config.AllowOrigins = []string{"http://localhost:8080"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
-	// config.AllowHeaders = []string{"http://localhost:8080"}
 	config.AllowCredentials = true
 	config.ExposeHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	config.MaxAge = 300
 	r.Use(cors.New(config))
 
 	// Define your routes
-	r.GET("/segment/playlist/:name", apihandler.GetPlaylistHandler(appCtx))
-	r.GET("/segment/playlist/:name/:resolution/:playlistName", apihandler.GetPlaylistHandler(appCtx))
-	r.GET("/segment", apihandler.SegmentHandler(appCtx))
+
+	segmentGroup := r.Group("/segment", middleware.RequiredAuth(appCtx))
+	{
+		segmentGroup.GET("/playlist/:name", apihandler.GetPlaylistHandler(appCtx))
+		segmentGroup.GET("/playlist/:name/:resolution/:playlistName", apihandler.GetPlaylistHandler(appCtx))
+		segmentGroup.GET("", apihandler.SegmentHandler(appCtx))
+	}
+
+	courseGroup := r.Group("/course")
+	{
+		courseGroup.POST("", coursetransport.CreateCourseHandler(appCtx))
+	}
 
 	r.POST("/upload",
 		middleware.RequiredAuth(appCtx),
