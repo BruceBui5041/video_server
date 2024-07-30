@@ -4,8 +4,10 @@ import (
 	"net/http"
 	"video_server/common"
 	"video_server/component"
+	"video_server/model/category/categorystore"
 	"video_server/model/course/coursebiz"
 	"video_server/model/course/coursemodel"
+	"video_server/model/course/courserepo"
 	"video_server/model/course/coursestore"
 
 	"github.com/gin-gonic/gin"
@@ -23,16 +25,19 @@ func CreateCourseHandler(appCtx component.AppContext) gin.HandlerFunc {
 
 		db := appCtx.GetMainDBConnection()
 
-		coursestore := coursestore.NewSQLStore(db)
-		coursebusiness := coursebiz.NewCreateCourseBiz(coursestore)
+		categoryStore := categorystore.NewSQLStore(db)
 
-		input.CreatorID = uint(requester.GetUserId())
-		err := coursebusiness.CreateNewCourse(ctx, &input)
+		coursestore := coursestore.NewSQLStore(db)
+		repo := courserepo.NewCourseRepo(coursestore, categoryStore)
+		coursebusiness := coursebiz.NewCreateCourseBiz(repo)
+
+		input.CreatorID = requester.GetUserId()
+		course, err := coursebusiness.CreateNewCourse(ctx, &input)
 
 		if err != nil {
 			panic(err)
 		}
 
-		ctx.JSON(http.StatusOK, common.SimpleSuccessResponse("ok"))
+		ctx.JSON(http.StatusOK, common.SimpleSuccessResponse(course))
 	}
 }

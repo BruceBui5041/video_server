@@ -9,8 +9,8 @@ type CreateCourse struct {
 	common.SQLModel `json:",inline"`
 	Title           string `json:"title"`
 	Description     string `json:"description"`
-	CategoryID      uint   `json:"category_id"`
-	CreatorID       uint   `json:"creator_id"`
+	CategoryID      string `json:"category_id"`
+	CreatorID       uint32 `json:"creator_id"`
 	Slug            string `json:"slug"`
 }
 

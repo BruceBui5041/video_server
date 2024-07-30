@@ -1,8 +1,8 @@
 package models
 
 type UserAuth struct {
-	ID                uint   `gorm:"column:id;primaryKey;autoIncrement"`
-	UserID            uint   `gorm:"column:user_id;index"`
+	ID                uint32 `gorm:"column:id;primaryKey;autoIncrement"`
+	UserID            uint32 `gorm:"column:user_id;index"`
 	AuthType          string `gorm:"column:auth_type;not null;size:20"`
 	AuthProviderID    string `gorm:"column:auth_provider_id;size:255"`
 	AuthProviderToken string `gorm:"column:auth_provider_token"`

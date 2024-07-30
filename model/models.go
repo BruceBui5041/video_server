@@ -10,13 +10,6 @@ type Permission struct {
 	Description  string
 }
 
-type Category struct {
-	CategoryID  uint   `gorm:"primaryKey;autoIncrement"`
-	Name        string `gorm:"not null;size:100"`
-	Description string
-	Courses     []Course
-}
-
 type Tag struct {
 	TagID  uint    `gorm:"primaryKey;autoIncrement"`
 	Name   string  `gorm:"uniqueIndex;not null;size:50"`

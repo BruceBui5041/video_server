@@ -13,6 +13,7 @@ import (
 	"video_server/component/grpcserver"
 	"video_server/logger"
 	"video_server/middleware"
+	"video_server/model/category/categorytransport"
 	"video_server/model/course/coursetransport"
 	"video_server/model/user/usertransport"
 	"video_server/watermill"
@@ -121,7 +122,12 @@ func startHTTPServer(appCtx component.AppContext) {
 
 	courseGroup := r.Group("/course")
 	{
-		courseGroup.POST("", coursetransport.CreateCourseHandler(appCtx))
+		courseGroup.POST("", middleware.RequiredAuth(appCtx), coursetransport.CreateCourseHandler(appCtx))
+	}
+
+	categoryGroup := r.Group("/category")
+	{
+		categoryGroup.GET("", categorytransport.ListCategories(appCtx))
 	}
 
 	r.POST("/upload",

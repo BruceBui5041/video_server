@@ -3,10 +3,11 @@ package common
 import "time"
 
 const (
-	DbTypeVideo  = 1
-	DbTypeCourse = 2
-	DbTypeTag    = 3
-	DbTypeUser   = 4
+	DbTypeVideo    = 1
+	DbTypeCourse   = 2
+	DbTypeTag      = 3
+	DbTypeUser     = 4
+	DBTypeCategory = 5
 )
 
 const (
@@ -18,13 +19,13 @@ const (
 const CurrentUser = "user"
 
 type Requester interface {
-	GetUserId() uint
+	GetUserId() uint32
 	GetEmail() string
 	GetRole() string
 }
 
 type SQLModel struct {
-	Id        uint       `json:"-" gorm:"column,id;"`
+	Id        uint32     `json:"-" gorm:"column,id;"`
 	FakeId    *UID       `json:"id" gorm:"-"`
 	Status    string     `json:"status" gorm:"column:status;type:ENUM('active','inactive','suspended');default:active"`
 	CreatedAt *time.Time `json:"created_at,omitempty" gorm:"column,created_at;"`

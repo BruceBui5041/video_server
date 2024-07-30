@@ -1,7 +1,11 @@
 package models
 
 import (
+	"encoding/json"
 	"video_server/common"
+	"video_server/logger"
+
+	"go.uber.org/zap"
 )
 
 type User struct {
@@ -25,4 +29,21 @@ func (User) TableName() string {
 
 func (u *User) Mask(isAdmin bool) {
 	u.GenUID(common.DbTypeUser)
+}
+
+func (u *User) GetUserId() uint32 {
+	return u.Id
+}
+
+func (u *User) GetEmail() string {
+	return u.Email
+}
+
+func (u *User) GetRole() string {
+	data, err := json.Marshal(u.Roles)
+	if err != nil {
+		logger.AppLogger.Error("cannot marshal users roles", zap.Error(err))
+		return ""
+	}
+	return string(data)
 }

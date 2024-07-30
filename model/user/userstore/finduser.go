@@ -4,8 +4,6 @@ import (
 	"context"
 	"video_server/common"
 	models "video_server/model"
-
-	"gorm.io/gorm"
 )
 
 func (s *sqlStore) FindUser(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*models.User, error) {
@@ -18,11 +16,7 @@ func (s *sqlStore) FindUser(ctx context.Context, conditions map[string]interface
 	var user models.User
 
 	if err := db.Where(conditions).First(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, common.RecordNotFound
-		}
-
-		return nil, common.ErrDB(err)
+		return nil, common.ErrCannotListEntity(models.CategoryEntityName, err)
 	}
 
 	return &user, nil
