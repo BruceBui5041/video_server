@@ -25,12 +25,16 @@ func (v *createVideoBiz) CreateNewVideo(ctx context.Context, input *videomodel.C
 		return nil, errors.New("video title is required")
 	}
 
-	if input.CourseID == 0 {
-		return nil, errors.New("course ID is required")
+	if input.CourseSlug == "" {
+		return nil, errors.New("course slug is required")
 	}
 
 	if input.Slug == "" {
 		return nil, errors.New("video slug is required")
+	}
+
+	if input.ThumbnailURL == "" {
+		return nil, errors.New("video thumbnail is required")
 	}
 
 	if input.VideoURL == "" {

@@ -36,19 +36,20 @@ func NewCreateVideoRepo(videoStore CreateVideoStore, courseStore CourseStore) *c
 }
 
 func (repo *createVideoRepo) CreateNewVideo(ctx context.Context, input *videomodel.CreateVideo) (*models.Video, error) {
-	course, err := repo.courseStore.FindOne(ctx, map[string]interface{}{"id": input.CourseID})
+	course, err := repo.courseStore.FindOne(ctx, map[string]interface{}{"slug": input.CourseSlug})
 	if err != nil {
 		return nil, err
 	}
 
 	newVideo := &models.Video{
-		CourseID:    input.CourseID,
-		Title:       input.Title,
-		Slug:        input.Slug,
-		Description: input.Description,
-		VideoURL:    input.VideoURL,
-		Duration:    input.Duration,
-		Order:       input.Order,
+		CourseID:     uint(course.Id),
+		Title:        input.Title,
+		Slug:         input.Slug,
+		Description:  input.Description,
+		VideoURL:     input.VideoURL,
+		Duration:     input.Duration,
+		Order:        input.Order,
+		ThumbnailURL: input.ThumbnailURL,
 	}
 
 	videoId, err := repo.videoStore.CreateNewVideo(ctx, newVideo)
