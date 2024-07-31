@@ -2,6 +2,7 @@ package videotransport
 
 import (
 	"net/http"
+	"video_server/appconst"
 	"video_server/common"
 	"video_server/component"
 	"video_server/model/course/coursestore"
@@ -9,33 +10,92 @@ import (
 	"video_server/model/video/videomodel"
 	"video_server/model/video/videorepo"
 	"video_server/model/video/videostore"
+	"video_server/storagehandler"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	return func(c *gin.Context) {
 		var input videomodel.CreateVideo
 
-		if err := ctx.ShouldBind(&input); err != nil {
-			panic(err)
+		if err := c.ShouldBind(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
-		// requester := ctx.MustGet(common.CurrentUser).(common.Requester)
+		videoFile, err := c.FormFile("video")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No video file uploaded"})
+			return
+		}
+
+		thumbnailFile, err := c.FormFile("thumbnail")
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "No thumbnail file uploaded"})
+			return
+		}
+
+		requester := c.MustGet(common.CurrentUser).(common.Requester)
+		useremail := requester.GetEmail()
+
+		videoInfo := storagehandler.VideoInfo{
+			Useremail:  useremail,
+			CourseSlug: input.CourseSlug,
+			VideoSlug:  input.Slug,
+			Filename:   videoFile.Filename,
+		}
+
+		videoKey := storagehandler.GenerateVideoS3Key(videoInfo)
+		thumbnailKey := storagehandler.GenerateThumbnailS3Key(videoInfo)
+
+		// Open video file
+		videoFileContent, err := videoFile.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open video file"})
+			return
+		}
+		defer videoFileContent.Close()
+
+		// Upload video to S3
+		err = storagehandler.UploadFileToS3(videoFileContent, appconst.AWSVideoS3BuckerName, videoKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload video to S3"})
+			return
+		}
+
+		// Open thumbnail file
+		thumbnailFileContent, err := thumbnailFile.Open()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open thumbnail file"})
+			return
+		}
+		defer thumbnailFileContent.Close()
+
+		// Upload thumbnail to S3
+		err = storagehandler.UploadFileToS3(thumbnailFileContent, appconst.AWSVideoS3BuckerName, thumbnailKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload thumbnail to S3"})
+			return
+		}
+
+		// Update input with S3 URLs
+		input.VideoURL = videoKey
+		input.ThumbnailURL = thumbnailKey
 
 		db := appCtx.GetMainDBConnection()
 
 		courseStore := coursestore.NewSQLStore(db)
 		videoStore := videostore.NewSQLStore(db)
 		repo := videorepo.NewCreateVideoRepo(videoStore, courseStore)
-		videoBusiness := videobiz.NewCreateVideoBiz(repo)
+		biz := videobiz.NewCreateVideoBiz(repo)
 
-		video, err := videoBusiness.CreateNewVideo(ctx, &input)
-
+		video, err := biz.CreateNewVideo(c.Request.Context(), &input)
 		if err != nil {
-			panic(err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		}
 
-		ctx.JSON(http.StatusOK, common.SimpleSuccessResponse(video))
+		c.JSON(http.StatusOK, common.SimpleSuccessResponse(video))
 	}
 }

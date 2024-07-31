@@ -13,6 +13,7 @@ type Video struct {
 	Slug            string     `json:"slug" gorm:"not null;size:255"`
 	Description     string     `json:"description"`
 	VideoURL        string     `json:"video_url" gorm:"not null;size:255"`
+	ThumbnailURL    string     `json:"thumbnail_url" gorm:"not null;size:255"`
 	Duration        int        `json:"duration"`
 	Order           int        `json:"order"`
 	Course          Course     `json:"course" gorm:"constraint:OnDelete:CASCADE;"`
