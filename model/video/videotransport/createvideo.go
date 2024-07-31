@@ -67,6 +67,8 @@ func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 		// Open thumbnail file
 		thumbnailFileContent, err := thumbnailFile.Open()
 		if err != nil {
+			// Remove the uploaded video if thumbnail file opening fails
+			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, videoKey)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open thumbnail file"})
 			return
 		}
@@ -75,6 +77,8 @@ func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 		// Upload thumbnail to S3
 		err = storagehandler.UploadFileToS3(thumbnailFileContent, appconst.AWSVideoS3BuckerName, thumbnailKey)
 		if err != nil {
+			// Remove the uploaded video if thumbnail upload fails
+			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, videoKey)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload thumbnail to S3"})
 			return
 		}
@@ -92,6 +96,9 @@ func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 
 		video, err := biz.CreateNewVideo(c.Request.Context(), &input)
 		if err != nil {
+			// Remove both video and thumbnail from S3 if video creation fails
+			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, videoKey)
+			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, thumbnailKey)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}

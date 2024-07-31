@@ -115,3 +115,24 @@ func GetFileFromCloudFrontOrS3(bucket, key string) (io.ReadCloser, error) {
 
 	return file, nil
 }
+
+func RemoveFileFromS3(bucket, key string) error {
+	// Create an S3 service client
+	svc := s3.New(awsSession)
+
+	// Create the DeleteObject request
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}
+
+	// Delete the object
+	_, err := svc.DeleteObject(input)
+	if err != nil {
+		logger.AppLogger.Error("Failed to delete object from S3", zap.Error(err), zap.String("bucket", bucket), zap.String("key", key))
+		return fmt.Errorf("failed to delete object: %v", err)
+	}
+
+	logger.AppLogger.Info("Successfully deleted object from S3", zap.String("bucket", bucket), zap.String("key", key))
+	return nil
+}
