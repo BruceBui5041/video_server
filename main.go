@@ -16,6 +16,7 @@ import (
 	"video_server/model/category/categorytransport"
 	"video_server/model/course/coursetransport"
 	"video_server/model/user/usertransport"
+	"video_server/model/video/videotransport"
 	"video_server/watermill"
 
 	pb "video_server/proto/video_service/video_service"
@@ -125,6 +126,11 @@ func startHTTPServer(appCtx component.AppContext) {
 		courseGroup.POST("", middleware.RequiredAuth(appCtx), coursetransport.CreateCourseHandler(appCtx))
 		courseGroup.GET("", coursetransport.ListCourses(appCtx))
 		courseGroup.PUT("/courses/:id", coursetransport.UpdateCourseHandler(appCtx))
+	}
+
+	videoGroup := r.Group("/video")
+	{
+		videoGroup.POST("", videotransport.CreateVideoHandler(appCtx))
 	}
 
 	categoryGroup := r.Group("/category")

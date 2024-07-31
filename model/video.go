@@ -4,6 +4,8 @@ import (
 	"video_server/common"
 )
 
+const VideoEntityName = "Video"
+
 type Video struct {
 	common.SQLModel `json:",inline"`
 	CourseID        uint       `json:"course_id" gorm:"index"`
