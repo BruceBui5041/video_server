@@ -27,16 +27,16 @@ type CreateCourseStore interface {
 	) (*models.Course, error)
 }
 
-type courseRepo struct {
+type createCourseRepo struct {
 	courseStore   CreateCourseStore
 	categoryStore CategoryStore
 }
 
-func NewCourseRepo(courseStore CreateCourseStore, categoryStore CategoryStore) *courseRepo {
-	return &courseRepo{courseStore: courseStore, categoryStore: categoryStore}
+func NewCreateCourseRepo(courseStore CreateCourseStore, categoryStore CategoryStore) *createCourseRepo {
+	return &createCourseRepo{courseStore: courseStore, categoryStore: categoryStore}
 }
 
-func (repo *courseRepo) CreateNewCourse(ctx context.Context, input *coursemodel.CreateCourse) (*models.Course, error) {
+func (repo *createCourseRepo) CreateNewCourse(ctx context.Context, input *coursemodel.CreateCourse) (*models.Course, error) {
 	uid, err := common.FromBase58(input.CategoryID)
 	if err != nil {
 		return nil, err

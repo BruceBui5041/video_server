@@ -28,7 +28,7 @@ func CreateCourseHandler(appCtx component.AppContext) gin.HandlerFunc {
 		categoryStore := categorystore.NewSQLStore(db)
 
 		coursestore := coursestore.NewSQLStore(db)
-		repo := courserepo.NewCourseRepo(coursestore, categoryStore)
+		repo := courserepo.NewCreateCourseRepo(coursestore, categoryStore)
 		coursebusiness := coursebiz.NewCreateCourseBiz(repo)
 
 		input.CreatorID = requester.GetUserId()

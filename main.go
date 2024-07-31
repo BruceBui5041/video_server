@@ -124,6 +124,7 @@ func startHTTPServer(appCtx component.AppContext) {
 	{
 		courseGroup.POST("", middleware.RequiredAuth(appCtx), coursetransport.CreateCourseHandler(appCtx))
 		courseGroup.GET("", coursetransport.ListCourses(appCtx))
+		courseGroup.PUT("/courses/:id", coursetransport.UpdateCourseHandler(appCtx))
 	}
 
 	categoryGroup := r.Group("/category")

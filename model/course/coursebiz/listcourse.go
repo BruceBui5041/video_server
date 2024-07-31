@@ -6,23 +6,23 @@ import (
 	models "video_server/model"
 )
 
-type CourseStore interface {
+type ListCourseStore interface {
 	FindAll(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) ([]models.Course, error)
 }
 
-type courseBiz struct {
-	courseStore CourseStore
+type listCourseBiz struct {
+	listCourseStore ListCourseStore
 }
 
-func NewCourseBiz(courseStore CourseStore) *courseBiz {
-	return &courseBiz{courseStore: courseStore}
+func NewCourseBiz(listCourseStore ListCourseStore) *listCourseBiz {
+	return &listCourseBiz{listCourseStore: listCourseStore}
 }
 
-func (biz *courseBiz) ListCourses(ctx context.Context,
+func (biz *listCourseBiz) ListCourses(ctx context.Context,
 	conditions map[string]interface{},
 	moreInfo ...string,
 ) ([]models.Course, error) {
-	courses, err := biz.courseStore.FindAll(ctx, conditions, moreInfo...)
+	courses, err := biz.listCourseStore.FindAll(ctx, conditions, moreInfo...)
 
 	if err != nil {
 		return nil, common.ErrCannotListEntity(models.CourseEntityName, err)
