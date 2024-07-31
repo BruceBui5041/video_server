@@ -131,6 +131,7 @@ func startHTTPServer(appCtx component.AppContext) {
 	videoGroup := r.Group("/video")
 	{
 		videoGroup.POST("", middleware.RequiredAuth(appCtx), videotransport.CreateVideoHandler(appCtx))
+		videoGroup.GET("/:course_slug", middleware.RequiredAuth(appCtx), videotransport.ListCourseVideos(appCtx))
 	}
 
 	categoryGroup := r.Group("/category")
