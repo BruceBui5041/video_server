@@ -32,9 +32,10 @@ func ConnectToVideoProcessingServer() (pb.VideoProcessingServiceClient, *grpc.Cl
 func ProcessNewVideoRequest(appCtx component.AppContext, videoInfo *messagemodel.VideoInfo) error {
 	// Prepare the request
 	req := &pb.VideoInfo{
-		VideoId: videoInfo.VideoID,
-		Title:   videoInfo.Title,
-		S3Key:   videoInfo.S3Key,
+		S3Key:      videoInfo.RawVidS3Key,
+		VideoSlug:  videoInfo.VideoSlug,
+		CourseSlug: videoInfo.CourseSlug,
+		UserEmail:  videoInfo.UserEmail,
 	}
 
 	// Call the gRPC method

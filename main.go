@@ -116,8 +116,15 @@ func startHTTPServer(appCtx component.AppContext) {
 
 	segmentGroup := r.Group("/segment", middleware.RequiredAuth(appCtx))
 	{
-		segmentGroup.GET("/playlist/:name", apihandler.GetPlaylistHandler(appCtx))
-		segmentGroup.GET("/playlist/:name/:resolution/:playlistName", apihandler.GetPlaylistHandler(appCtx))
+		// for get master list
+		segmentGroup.GET("/playlist/:course_slug/:video_slug", apihandler.GetPlaylistHandler(appCtx))
+
+		// for get video playlish
+		segmentGroup.GET(
+			"/playlist/:course_slug/:video_slug/:resolution/:playlistName",
+			apihandler.GetPlaylistHandler(appCtx),
+		)
+
 		segmentGroup.GET("", apihandler.SegmentHandler(appCtx))
 	}
 

@@ -3,6 +3,7 @@ package storagehandler
 import (
 	"fmt"
 	"path/filepath"
+	"video_server/utils"
 )
 
 type VideoInfo struct {
@@ -13,11 +14,12 @@ type VideoInfo struct {
 }
 
 func GenerateVideoS3Key(info VideoInfo) string {
-	return fmt.Sprintf("course/%s/%s/%s/raw_videos/%s",
+	return fmt.Sprintf("course/%s/%s/%s/video_segment/%s",
 		info.Useremail,
 		info.CourseSlug,
 		info.VideoSlug,
-		info.Filename)
+		utils.RenameFile(info.Filename, info.VideoSlug),
+	)
 }
 
 func GenerateThumbnailS3Key(info VideoInfo) string {
@@ -26,7 +28,8 @@ func GenerateThumbnailS3Key(info VideoInfo) string {
 		info.Useremail,
 		info.CourseSlug,
 		info.VideoSlug,
-		thumbnailFilename)
+		thumbnailFilename,
+	)
 }
 
 func generateThumbnailFilename(videoFilename string) string {

@@ -2,11 +2,9 @@ package messagemodel
 
 // VideoInfo represents the information about a newly uploaded video
 type VideoInfo struct {
-	VideoID     string `json:"video_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	OwnerId     uint32 `json:"owner_id"`
 	Timestamp   int64  `json:"timestamp"`
-	S3Key       string `json:"s3key"`
-	Slug        string `json:"slug"`
+	RawVidS3Key string `json:"s3key"`
+	CourseSlug  string `json:"course_slug"`
+	VideoSlug   string `json:"video_slug"`
+	UserEmail   string `json:"user_email"`
 }

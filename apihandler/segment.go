@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"video_server/appconst"
+	"video_server/common"
 	"video_server/component"
 	"video_server/logger"
 	"video_server/storagehandler"
@@ -16,17 +17,31 @@ import (
 
 func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		videoName := c.Query("name")
+		videoSlug := c.Query("video_slug")
+		courseSlug := c.Query("course_slug")
 		resolution := c.Query("resolution")
 		segmentNumber := c.Query("number")
 
-		if videoName == "" || resolution == "" || segmentNumber == "" {
+		if videoSlug == "" || resolution == "" || segmentNumber == "" {
 			logger.AppLogger.Error("Missing required parameters")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required parameters"})
 			return
 		}
 
-		key := filepath.Join("segments", videoName, resolution, fmt.Sprintf("segment_%s.ts", segmentNumber))
+		requester := c.MustGet(common.CurrentUser).(common.Requester)
+		useremail := requester.GetEmail()
+
+		key := filepath.Join(
+			storagehandler.GenerateVideoS3Key(storagehandler.VideoInfo{
+				Useremail:  useremail,
+				CourseSlug: courseSlug,
+				VideoSlug:  videoSlug,
+				Filename:   videoSlug,
+			}),
+			resolution,
+			fmt.Sprintf("segment_%s.ts", segmentNumber),
+		)
+
 		vidSegment, err := storagehandler.GetFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
 		if err != nil {
 			logger.AppLogger.Error("Error getting segment file", zap.Error(err), zap.String("key", key))

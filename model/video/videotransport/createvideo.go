@@ -5,14 +5,18 @@ import (
 	"video_server/appconst"
 	"video_server/common"
 	"video_server/component"
+	"video_server/logger"
+	"video_server/messagemodel"
 	"video_server/model/course/coursestore"
 	"video_server/model/video/videobiz"
 	"video_server/model/video/videomodel"
 	"video_server/model/video/videorepo"
 	"video_server/model/video/videostore"
 	"video_server/storagehandler"
+	"video_server/watermill"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
@@ -39,15 +43,15 @@ func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 		requester := c.MustGet(common.CurrentUser).(common.Requester)
 		useremail := requester.GetEmail()
 
-		videoInfo := storagehandler.VideoInfo{
+		videoStorageInfo := storagehandler.VideoInfo{
 			Useremail:  useremail,
 			CourseSlug: input.CourseSlug,
 			VideoSlug:  input.Slug,
 			Filename:   videoFile.Filename,
 		}
 
-		videoKey := storagehandler.GenerateVideoS3Key(videoInfo)
-		thumbnailKey := storagehandler.GenerateThumbnailS3Key(videoInfo)
+		videoKey := storagehandler.GenerateVideoS3Key(videoStorageInfo)
+		thumbnailKey := storagehandler.GenerateThumbnailS3Key(videoStorageInfo)
 
 		// Open video file
 		videoFileContent, err := videoFile.Open()
@@ -100,6 +104,23 @@ func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, videoKey)
 			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, thumbnailKey)
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		videoUploadedInfo := &messagemodel.VideoInfo{
+			RawVidS3Key: videoKey,
+			CourseSlug:  input.CourseSlug,
+			VideoSlug:   input.Slug,
+			UserEmail:   useremail,
+		}
+
+		err = watermill.PublishVideoUploadedEvent(appCtx, videoUploadedInfo)
+		if err != nil {
+			logger.AppLogger.Error("publish video uploaded event", zap.Error(err), zap.String("filename", input.Slug))
+			// Remove both video and thumbnail from S3 if video creation fails
+			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, videoKey)
+			_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, thumbnailKey)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to publish uploaded video event"})
 			return
 		}
 

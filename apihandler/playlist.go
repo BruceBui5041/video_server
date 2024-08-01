@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"video_server/appconst"
+	"video_server/common"
 	"video_server/component"
 	"video_server/logger"
 	"video_server/storagehandler"
@@ -16,21 +17,32 @@ import (
 
 func GetPlaylistHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		videoName := c.Param("name")
+		videoSlug := c.Param("video_slug")
+		courseSlug := c.Param("course_slug")
 		resolution := c.Param("resolution")
 		playlistName := c.Param("playlistName")
 
-		if videoName == "" {
+		if videoSlug == "" {
 			logger.AppLogger.Error("Missing video name")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing video name"})
 			return
 		}
 
+		requester := c.MustGet(common.CurrentUser).(common.Requester)
+		useremail := requester.GetEmail()
+
+		videoSlugS3Key := storagehandler.GenerateVideoS3Key(storagehandler.VideoInfo{
+			Useremail:  useremail,
+			CourseSlug: courseSlug,
+			VideoSlug:  videoSlug,
+			Filename:   videoSlug,
+		})
+
 		// Construct the key for the master playlist
-		key := filepath.Join("segments", videoName, "master.m3u8")
+		key := filepath.Join(videoSlugS3Key, "master.m3u8")
 
 		if playlistName != "" {
-			key = filepath.Join("segments", videoName, resolution, playlistName)
+			key = filepath.Join(videoSlugS3Key, resolution, playlistName)
 		}
 
 		playlist, err := storagehandler.GetFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
