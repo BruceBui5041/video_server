@@ -126,6 +126,7 @@ func startHTTPServer(appCtx component.AppContext) {
 		)
 
 		video.GET("", apihandler.SegmentHandler(appCtx))
+		video.PUT("/:id", videotransport.UpdateVideoHandler(appCtx))
 	}
 
 	previewVideo := r.Group("/preview")
