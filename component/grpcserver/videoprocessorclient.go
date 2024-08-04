@@ -33,9 +33,9 @@ func ProcessNewVideoRequest(appCtx component.AppContext, videoInfo *messagemodel
 	// Prepare the request
 	req := &pb.VideoInfo{
 		S3Key:      videoInfo.RawVidS3Key,
-		VideoSlug:  videoInfo.VideoSlug,
-		CourseSlug: videoInfo.CourseSlug,
-		UserEmail:  videoInfo.UserEmail,
+		VideoId:    videoInfo.VideoId,
+		CourseId:   videoInfo.CourseId,
+		UploadedBy: videoInfo.UploadedBy,
 	}
 
 	// Call the gRPC method

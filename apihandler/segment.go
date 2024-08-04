@@ -9,6 +9,10 @@ import (
 	"video_server/common"
 	"video_server/component"
 	"video_server/logger"
+	"video_server/model/course/coursestore"
+	"video_server/model/video/videobiz"
+	"video_server/model/video/videorepo"
+	"video_server/model/video/videostore"
 	"video_server/storagehandler"
 
 	"github.com/gin-gonic/gin"
@@ -17,27 +21,35 @@ import (
 
 func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		videoSlug := c.Query("video_slug")
+		uid, err := common.FromBase58(c.Query("video_id"))
+		if err != nil {
+			panic(err)
+		}
+
+		videoId := uid.GetLocalID()
 		courseSlug := c.Query("course_slug")
 		resolution := c.Query("resolution")
 		segmentNumber := c.Query("number")
 
-		if videoSlug == "" || resolution == "" || segmentNumber == "" {
+		if resolution == "" || segmentNumber == "" || courseSlug == "" {
 			logger.AppLogger.Error("Missing required parameters")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required parameters"})
 			return
 		}
 
-		requester := c.MustGet(common.CurrentUser).(common.Requester)
-		useremail := requester.GetEmail()
+		db := appCtx.GetMainDBConnection()
+		videoStore := videostore.NewSQLStore(db)
+		courseStore := coursestore.NewSQLStore(db)
+		repo := videorepo.NewGetVideoRepo(videoStore, courseStore)
+		biz := videobiz.NewGetVideoBiz(repo)
+
+		video, err := biz.GetVideoById(c.Request.Context(), uint32(videoId), courseSlug)
+		if err != nil {
+			panic(err)
+		}
 
 		key := filepath.Join(
-			storagehandler.GenerateVideoS3Key(storagehandler.VideoInfo{
-				Useremail:  useremail,
-				CourseSlug: courseSlug,
-				VideoSlug:  videoSlug,
-				Filename:   videoSlug,
-			}),
+			video.VideoURL,
 			resolution,
 			fmt.Sprintf("segment_%s.ts", segmentNumber),
 		)
@@ -52,16 +64,13 @@ func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 
 		c.Header("Content-Type", "video/MP2T")
 
-		// Use c.Stream to handle the streaming of the video segment
 		c.Stream(func(w io.Writer) bool {
 			_, err := io.Copy(w, vidSegment)
 			if err != nil {
 				logger.AppLogger.Error("Error streaming segment file", zap.Error(err))
-				// In case of error, we can't modify headers or status code here,
-				// but we can log the error and return false to stop streaming
 				return false
 			}
-			return false // Return false to indicate we're done streaming
+			return false
 		})
 	}
 }

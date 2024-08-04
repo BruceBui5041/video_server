@@ -6,7 +6,7 @@ import (
 
 type CreateVideo struct {
 	common.SQLModel `json:",inline"`
-	CourseID        uint   `json:"course_id" form:"course_id"`
+	CourseID        uint32 `json:"course_id" form:"course_id"`
 	CourseSlug      string `json:"course_slug" form:"course_slug"`
 	Title           string `json:"title" form:"title"`
 	Slug            string `json:"slug" form:"slug"`

@@ -22,6 +22,8 @@ type Requester interface {
 	GetUserId() uint32
 	GetEmail() string
 	GetRole() string
+	GetFakeId() string
+	Mask(isAdmin bool)
 }
 
 type SQLModel struct {

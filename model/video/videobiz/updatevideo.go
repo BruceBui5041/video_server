@@ -30,7 +30,7 @@ func (v *updateVideoBiz) UpdateVideo(
 	input *videomodel.UpdateVideo,
 	videoReader io.Reader,
 	thumbnailReader io.Reader,
-	useremail string,
+	userId uint32,
 ) (*models.Video, error) {
 	// Validate input
 	if err := v.validateInput(input); err != nil {
@@ -44,7 +44,7 @@ func (v *updateVideoBiz) UpdateVideo(
 	}
 
 	// Handle file uploads
-	if err := v.handleFileUploads(input, videoReader, thumbnailReader, useremail, existingVideo.Slug); err != nil {
+	if err := v.handleFileUploads(input, videoReader, thumbnailReader, userId, existingVideo.Id); err != nil {
 		return nil, err
 	}
 
@@ -81,13 +81,19 @@ func (v *updateVideoBiz) handleFileUploads(
 	input *videomodel.UpdateVideo,
 	videoReader io.Reader,
 	thumbnailReader io.Reader,
-	useremail string,
-	videoSlug string,
+	userId uint32,
+	videoId uint32,
 ) error {
+	fakeVideo := common.SQLModel{Id: videoId}
+	fakeVideo.GenUID(common.DbTypeVideo)
+
+	fakeUsr := common.SQLModel{Id: userId}
+	fakeUsr.GenUID(common.DbTypeUser)
+
 	if videoReader != nil {
 		videoStorageInfo := storagehandler.VideoInfo{
-			Useremail: useremail,
-			VideoSlug: videoSlug,
+			UploadedBy: fakeUsr.FakeId.String(),
+			VideoId:    fakeVideo.FakeId.String(),
 		}
 
 		videoKey := storagehandler.GenerateVideoS3Key(videoStorageInfo)
@@ -101,8 +107,8 @@ func (v *updateVideoBiz) handleFileUploads(
 
 	if thumbnailReader != nil {
 		thumbnailStorageInfo := storagehandler.VideoInfo{
-			Useremail: useremail,
-			VideoSlug: videoSlug,
+			UploadedBy: fakeUsr.FakeId.String(),
+			VideoId:    fakeVideo.FakeId.String(),
 		}
 
 		thumbnailKey := storagehandler.GenerateThumbnailS3Key(thumbnailStorageInfo)

@@ -32,7 +32,7 @@ func UpdateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 		thumbnailFile, _ := c.FormFile("thumbnail")
 
 		requester := c.MustGet(common.CurrentUser).(common.Requester)
-		useremail := requester.GetEmail()
+		userId := requester.GetUserId()
 
 		db := appCtx.GetMainDBConnection()
 		store := videostore.NewSQLStore(db)
@@ -59,7 +59,7 @@ func UpdateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 			defer thumbnailReader.(interface{ Close() error }).Close()
 		}
 
-		video, err := biz.UpdateVideo(c.Request.Context(), uint32(id), &input, videoReader, thumbnailReader, useremail)
+		video, err := biz.UpdateVideo(c.Request.Context(), uint32(id), &input, videoReader, thumbnailReader, userId)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return

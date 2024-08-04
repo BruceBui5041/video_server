@@ -47,3 +47,7 @@ func (u *User) GetRole() string {
 	}
 	return string(data)
 }
+
+func (u *User) GetFakeId() string {
+	return u.FakeId.String()
+}

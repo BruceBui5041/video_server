@@ -3,37 +3,36 @@ package storagehandler
 import (
 	"fmt"
 	"path/filepath"
-	"video_server/utils"
 )
 
 type VideoInfo struct {
-	Useremail  string
-	CourseSlug string
-	VideoSlug  string
-	Filename   string
+	UploadedBy        string `json:"uploaded_by"`
+	CourseId          string `json:"course_id"`
+	VideoId           string `json:"video_id"`
+	ThumbnailFilename string `json:"thumbnail_filename"`
 }
 
 func GenerateVideoS3Key(info VideoInfo) string {
 	return fmt.Sprintf("course/%s/%s/%s/video_segment/%s",
-		info.Useremail,
-		info.CourseSlug,
-		info.VideoSlug,
-		utils.RenameFile(info.Filename, info.VideoSlug),
+		info.UploadedBy,
+		info.CourseId,
+		info.VideoId,
+		info.VideoId,
 	)
 }
 
 func GenerateThumbnailS3Key(info VideoInfo) string {
-	thumbnailFilename := generateThumbnailFilename(info.Filename)
+	thumbnailFilename := generateThumbnailFilename(info)
 	return fmt.Sprintf("course/%s/%s/%s/thumbnail/%s",
-		info.Useremail,
-		info.CourseSlug,
-		info.VideoSlug,
+		info.UploadedBy,
+		info.CourseId,
+		info.VideoId,
 		thumbnailFilename,
 	)
 }
 
-func generateThumbnailFilename(videoFilename string) string {
+func generateThumbnailFilename(info VideoInfo) string {
+	videoFilename := info.ThumbnailFilename
 	extension := filepath.Ext(videoFilename)
-	baseFilename := videoFilename[:len(videoFilename)-len(extension)]
-	return baseFilename + "_thumbnail" + extension
+	return "thumbnail" + extension
 }

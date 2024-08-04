@@ -8,7 +8,7 @@ const VideoEntityName = "Video"
 
 type Video struct {
 	common.SQLModel `json:",inline"`
-	CourseID        uint       `json:"course_id" gorm:"index"`
+	CourseID        uint32     `json:"course_id" gorm:"index"`
 	Title           string     `json:"title" gorm:"not null;size:255"`
 	Slug            string     `json:"slug" gorm:"not null;size:255"`
 	Description     string     `json:"description"`

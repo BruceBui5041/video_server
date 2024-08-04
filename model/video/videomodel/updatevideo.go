@@ -11,6 +11,10 @@ type UpdateVideo struct {
 	AllowPreview *bool   `json:"allow_preview" form:"allow_preview"`
 }
 
+func (UpdateVideo) TableName() string {
+	return "video"
+}
+
 func (uv *UpdateVideo) Mask(isAdmin bool) {
 	// No need to mask anything for update model
 }
