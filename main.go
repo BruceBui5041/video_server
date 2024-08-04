@@ -114,18 +114,32 @@ func startHTTPServer(appCtx component.AppContext) {
 
 	// Define your routes
 
-	segmentGroup := r.Group("/segment", middleware.RequiredAuth(appCtx))
+	video := r.Group("/video", middleware.RequiredAuth(appCtx))
 	{
 		// for get master list
-		segmentGroup.GET("/playlist/:course_slug/:video_slug", apihandler.GetPlaylistHandler(appCtx))
+		video.GET("/playlist/:course_slug/:video_slug", apihandler.GetPlaylistHandler(appCtx))
 
 		// for get video playlish
-		segmentGroup.GET(
+		video.GET(
 			"/playlist/:course_slug/:video_slug/:resolution/:playlistName",
 			apihandler.GetPlaylistHandler(appCtx),
 		)
 
-		segmentGroup.GET("", apihandler.SegmentHandler(appCtx))
+		video.GET("", apihandler.SegmentHandler(appCtx))
+	}
+
+	previewVideo := r.Group("/preview")
+	{
+		// for get master list
+		previewVideo.GET("/playlist/:course_slug/:video_slug", apihandler.GetPlaylistHandler(appCtx))
+
+		// for get video playlish
+		previewVideo.GET(
+			"/playlist/:course_slug/:video_slug/:resolution/:playlistName",
+			apihandler.GetPlaylistHandler(appCtx),
+		)
+
+		previewVideo.GET("", apihandler.SegmentHandler(appCtx))
 	}
 
 	courseGroup := r.Group("/course")
