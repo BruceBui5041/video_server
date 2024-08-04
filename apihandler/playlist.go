@@ -37,21 +37,42 @@ func GetPlaylistHandler(appCtx component.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		db := appCtx.GetMainDBConnection()
-		videoStore := videostore.NewSQLStore(db)
-		courseStore := coursestore.NewSQLStore(db)
-		repo := videorepo.NewGetVideoRepo(videoStore, courseStore)
-		biz := videobiz.NewGetVideoBiz(repo)
-
-		video, err := biz.GetVideoById(c.Request.Context(), uint32(videoId), courseSlug)
+		// Check DynamoDB cache first
+		cacheKey := fmt.Sprintf("%s:%d", courseSlug, videoId)
+		dynamoDBClient := appCtx.GetDynamoDBClient()
+		cachedURL, err := dynamoDBClient.Get(cacheKey)
 		if err != nil {
-			panic(err)
+			logger.AppLogger.Error("Error getting cached URL from DynamoDB", zap.Error(err))
 		}
 
-		key := filepath.Join(video.VideoURL, "master.m3u8")
+		var videoURL string
+		if cachedURL != "" {
+			videoURL = cachedURL
+		} else {
+			db := appCtx.GetMainDBConnection()
+			videoStore := videostore.NewSQLStore(db)
+			courseStore := coursestore.NewSQLStore(db)
+			repo := videorepo.NewGetVideoRepo(videoStore, courseStore)
+			biz := videobiz.NewGetVideoBiz(repo)
+
+			video, err := biz.GetVideoById(c.Request.Context(), uint32(videoId), courseSlug)
+			if err != nil {
+				panic(err)
+			}
+
+			videoURL = video.VideoURL
+
+			// Cache the videoURL in DynamoDB
+			err = dynamoDBClient.Set(cacheKey, videoURL)
+			if err != nil {
+				logger.AppLogger.Error("Error caching URL in DynamoDB", zap.Error(err))
+			}
+		}
+
+		key := filepath.Join(videoURL, "master.m3u8")
 
 		if playlistName != "" {
-			key = filepath.Join(video.VideoURL, resolution, playlistName)
+			key = filepath.Join(videoURL, resolution, playlistName)
 		}
 
 		playlist, err := storagehandler.GetFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
