@@ -15,6 +15,7 @@ import (
 	"video_server/model/video/videostore"
 	"video_server/storagehandler"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -37,7 +38,6 @@ func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		// Check DynamoDB cache first
 		cacheKey := fmt.Sprintf("%s:%d", courseSlug, videoId)
 		dynamoDBClient := appCtx.GetDynamoDBClient()
 		cachedURL, err := dynamoDBClient.Get(cacheKey)
@@ -62,7 +62,6 @@ func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 
 			videoURL = video.VideoURL
 
-			// Cache the videoURL in DynamoDB
 			err = dynamoDBClient.Set(cacheKey, videoURL)
 			if err != nil {
 				logger.AppLogger.Error("Error caching URL in DynamoDB", zap.Error(err))
@@ -75,7 +74,8 @@ func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 			fmt.Sprintf("segment_%s.ts", segmentNumber),
 		)
 
-		vidSegment, err := storagehandler.GetFileFromCloudFrontOrS3(appconst.AWSVideoS3BuckerName, key)
+		svc := s3.New(appCtx.GetAWSSession())
+		vidSegment, err := storagehandler.GetFileFromCloudFrontOrS3(svc, appconst.AWSVideoS3BuckerName, key)
 		if err != nil {
 			logger.AppLogger.Error("Error getting segment file", zap.Error(err), zap.String("key", key))
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error getting segment file: %v", err)})

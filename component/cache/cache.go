@@ -1,10 +1,11 @@
 package cache
 
 import (
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
 type DynamoDBClient struct {
@@ -12,14 +13,7 @@ type DynamoDBClient struct {
 	tableName string
 }
 
-func NewDynamoDBClient(tableName string) (*DynamoDBClient, error) {
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("your-aws-region"),
-	})
-	if err != nil {
-		return nil, err
-	}
-
+func NewDynamoDBClient(sess *session.Session, tableName string) (*DynamoDBClient, error) {
 	client := dynamodb.New(sess)
 
 	return &DynamoDBClient{
@@ -29,11 +23,12 @@ func NewDynamoDBClient(tableName string) (*DynamoDBClient, error) {
 }
 
 func (d *DynamoDBClient) Set(key string, value string) error {
+	partitionKey := os.Getenv("DYNAMODB_PARTITION_KEY")
 	item := map[string]*dynamodb.AttributeValue{
-		"Key": {
+		partitionKey: {
 			S: aws.String(key),
 		},
-		"Value": {
+		"value": {
 			S: aws.String(value),
 		},
 	}
@@ -48,13 +43,15 @@ func (d *DynamoDBClient) Set(key string, value string) error {
 }
 
 func (d *DynamoDBClient) Get(key string) (string, error) {
+	partitionKey := os.Getenv("DYNAMODB_PARTITION_KEY")
 	input := &dynamodb.GetItemInput{
 		Key: map[string]*dynamodb.AttributeValue{
-			"Key": {
+			partitionKey: {
 				S: aws.String(key),
 			},
 		},
-		TableName: aws.String(d.tableName),
+		TableName:      aws.String(d.tableName),
+		ConsistentRead: aws.Bool(true),
 	}
 
 	result, err := d.client.GetItem(input)
@@ -66,14 +63,10 @@ func (d *DynamoDBClient) Get(key string) (string, error) {
 		return "", nil
 	}
 
-	var item struct {
-		Value string `json:"Value"`
+	value, ok := result.Item["value"]
+	if !ok || value.S == nil {
+		return "", nil
 	}
 
-	err = dynamodbattribute.UnmarshalMap(result.Item, &item)
-	if err != nil {
-		return "", err
-	}
-
-	return item.Value, nil
+	return *value.S, nil
 }

@@ -10,6 +10,7 @@ import (
 	"video_server/model/video/videorepo"
 	"video_server/model/video/videostore"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,9 +35,10 @@ func UpdateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 		requester := c.MustGet(common.CurrentUser).(common.Requester)
 		userId := requester.GetUserId()
 
+		svc := s3.New(appCtx.GetAWSSession())
 		db := appCtx.GetMainDBConnection()
 		store := videostore.NewSQLStore(db)
-		repo := videorepo.NewUpdateVideoRepo(store)
+		repo := videorepo.NewUpdateVideoRepo(store, svc)
 		biz := videobiz.NewUpdateVideoBiz(repo)
 
 		var videoReader, thumbnailReader interface{ Read([]byte) (int, error) }

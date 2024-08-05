@@ -9,11 +9,14 @@ import (
 	models "video_server/model"
 	"video_server/model/video/videomodel"
 	"video_server/storagehandler"
+
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type UpdateVideoRepo interface {
 	UpdateVideo(ctx context.Context, id uint32, input *videomodel.UpdateVideo) (*models.Video, error)
 	GetVideo(ctx context.Context, id uint32) (*models.Video, error)
+	GetS3Client() *s3.S3
 }
 
 type updateVideoBiz struct {
@@ -97,7 +100,12 @@ func (v *updateVideoBiz) handleFileUploads(
 		}
 
 		videoKey := storagehandler.GenerateVideoS3Key(videoStorageInfo)
-		err := storagehandler.UploadFileToS3(videoReader, appconst.AWSVideoS3BuckerName, videoKey)
+		err := storagehandler.UploadFileToS3(
+			v.repo.GetS3Client(),
+			videoReader,
+			appconst.AWSVideoS3BuckerName,
+			videoKey,
+		)
 		if err != nil {
 			return errors.New("failed to upload video to S3")
 		}
@@ -112,7 +120,12 @@ func (v *updateVideoBiz) handleFileUploads(
 		}
 
 		thumbnailKey := storagehandler.GenerateThumbnailS3Key(thumbnailStorageInfo)
-		err := storagehandler.UploadFileToS3(thumbnailReader, appconst.AWSVideoS3BuckerName, thumbnailKey)
+		err := storagehandler.UploadFileToS3(
+			v.repo.GetS3Client(),
+			thumbnailReader,
+			appconst.AWSVideoS3BuckerName,
+			thumbnailKey,
+		)
 		if err != nil {
 			return errors.New("failed to upload thumbnail to S3")
 		}

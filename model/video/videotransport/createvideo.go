@@ -13,6 +13,7 @@ import (
 	"video_server/model/video/videostore"
 	"video_server/watermill"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -42,9 +43,10 @@ func CreateVideoHandler(appCtx component.AppContext) gin.HandlerFunc {
 
 		db := appCtx.GetMainDBConnection()
 
+		svc := s3.New(appCtx.GetAWSSession())
 		courseStore := coursestore.NewSQLStore(db)
 		videoStore := videostore.NewSQLStore(db)
-		repo := videorepo.NewCreateVideoRepo(videoStore, courseStore)
+		repo := videorepo.NewCreateVideoRepo(videoStore, courseStore, svc)
 		biz := videobiz.NewCreateVideoBiz(repo)
 
 		video, err := biz.CreateNewVideo(c.Request.Context(), &input, videoFile, thumbnailFile)

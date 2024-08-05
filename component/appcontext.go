@@ -5,6 +5,7 @@ import (
 	pb "video_server/proto/video_service/video_service"
 
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,7 @@ type AppContext interface {
 	GetVideoProcessingClient() pb.VideoProcessingServiceClient
 	SecretKey() string
 	GetDynamoDBClient() *cache.DynamoDBClient
+	GetAWSSession() *session.Session
 }
 
 type appCtx struct {
@@ -22,6 +24,7 @@ type appCtx struct {
 	videoServiceClient pb.VideoProcessingServiceClient
 	jwtSecretKey       string
 	dynamoDBClient     *cache.DynamoDBClient
+	awsSession         *session.Session
 }
 
 func NewAppContext(
@@ -30,6 +33,7 @@ func NewAppContext(
 	videoServiceClient pb.VideoProcessingServiceClient,
 	jwtSecretKey string,
 	dynamoDBClient *cache.DynamoDBClient,
+	awsSession *session.Session,
 ) *appCtx {
 	return &appCtx{
 		db:                 db,
@@ -37,6 +41,7 @@ func NewAppContext(
 		videoServiceClient: videoServiceClient,
 		jwtSecretKey:       jwtSecretKey,
 		dynamoDBClient:     dynamoDBClient,
+		awsSession:         awsSession,
 	}
 }
 
@@ -58,4 +63,8 @@ func (ctx *appCtx) SecretKey() string {
 
 func (ctx *appCtx) GetDynamoDBClient() *cache.DynamoDBClient {
 	return ctx.dynamoDBClient
+}
+
+func (ctx *appCtx) GetAWSSession() *session.Session {
+	return ctx.awsSession
 }

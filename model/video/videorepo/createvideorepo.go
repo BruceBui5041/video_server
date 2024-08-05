@@ -9,6 +9,8 @@ import (
 	models "video_server/model"
 	"video_server/model/video/videomodel"
 	"video_server/storagehandler"
+
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type CourseStore interface {
@@ -39,10 +41,15 @@ type CreateVideoStore interface {
 type createVideoRepo struct {
 	videoStore  CreateVideoStore
 	courseStore CourseStore
+	svc         *s3.S3
 }
 
-func NewCreateVideoRepo(videoStore CreateVideoStore, courseStore CourseStore) *createVideoRepo {
-	return &createVideoRepo{videoStore: videoStore, courseStore: courseStore}
+func NewCreateVideoRepo(videoStore CreateVideoStore, courseStore CourseStore, svc *s3.S3) *createVideoRepo {
+	return &createVideoRepo{
+		videoStore:  videoStore,
+		courseStore: courseStore,
+		svc:         svc,
+	}
 }
 
 func (repo *createVideoRepo) CreateNewVideo(
@@ -126,7 +133,12 @@ func (repo *createVideoRepo) uploadFiles(videoFile, thumbnailFile *multipart.Fil
 	}
 	defer videoFileContent.Close()
 
-	err = storagehandler.UploadFileToS3(videoFileContent, appconst.AWSVideoS3BuckerName, videoKey)
+	err = storagehandler.UploadFileToS3(
+		repo.svc,
+		videoFileContent,
+		appconst.AWSVideoS3BuckerName,
+		videoKey,
+	)
 	if err != nil {
 		return errors.New("failed to upload video to S3")
 	}
@@ -138,7 +150,12 @@ func (repo *createVideoRepo) uploadFiles(videoFile, thumbnailFile *multipart.Fil
 	}
 	defer thumbnailFileContent.Close()
 
-	err = storagehandler.UploadFileToS3(thumbnailFileContent, appconst.AWSVideoS3BuckerName, thumbnailKey)
+	err = storagehandler.UploadFileToS3(
+		repo.svc,
+		thumbnailFileContent,
+		appconst.AWSVideoS3BuckerName,
+		thumbnailKey,
+	)
 	if err != nil {
 		go repo.removeFiles(videoKey, "")
 		return errors.New("failed to upload thumbnail to S3")
@@ -149,9 +166,9 @@ func (repo *createVideoRepo) uploadFiles(videoFile, thumbnailFile *multipart.Fil
 
 func (repo *createVideoRepo) removeFiles(videoKey, thumbnailKey string) {
 	if videoKey != "" {
-		_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, videoKey)
+		_ = storagehandler.RemoveFileFromS3(repo.svc, appconst.AWSVideoS3BuckerName, videoKey)
 	}
 	if thumbnailKey != "" {
-		_ = storagehandler.RemoveFileFromS3(appconst.AWSVideoS3BuckerName, thumbnailKey)
+		_ = storagehandler.RemoveFileFromS3(repo.svc, appconst.AWSVideoS3BuckerName, thumbnailKey)
 	}
 }

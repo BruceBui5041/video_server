@@ -4,6 +4,8 @@ import (
 	"context"
 	models "video_server/model"
 	"video_server/model/video/videomodel"
+
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 type UpdateVideoStore interface {
@@ -21,10 +23,15 @@ type UpdateVideoStore interface {
 
 type updateVideoRepo struct {
 	store UpdateVideoStore
+	svc   *s3.S3
 }
 
-func NewUpdateVideoRepo(store UpdateVideoStore) *updateVideoRepo {
-	return &updateVideoRepo{store: store}
+func NewUpdateVideoRepo(store UpdateVideoStore, svc *s3.S3) *updateVideoRepo {
+	return &updateVideoRepo{store: store, svc: svc}
+}
+
+func (repo *updateVideoRepo) GetS3Client() *s3.S3 {
+	return repo.svc
 }
 
 func (repo *updateVideoRepo) UpdateVideo(ctx context.Context, id uint32, input *videomodel.UpdateVideo) (*models.Video, error) {

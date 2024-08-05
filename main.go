@@ -10,6 +10,7 @@ import (
 	"video_server/apihandler"
 	"video_server/common"
 	"video_server/component"
+	"video_server/component/cache"
 	"video_server/component/grpcserver"
 	"video_server/logger"
 	"video_server/middleware"
@@ -21,6 +22,9 @@ import (
 
 	pb "video_server/proto/video_service/video_service"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -41,11 +45,18 @@ func main() {
 	client, conn := grpcserver.ConnectToVideoProcessingServer()
 	defer conn.Close()
 
+	awsSession, err := createAWSSession()
+	if err != nil {
+		log.Fatalf("Failed to create AWS session: %v", err)
+	}
+
 	appContext := component.NewAppContext(
 		connectToDB(),
 		watermill.NewPubsubPublisher(),
 		client,
 		jwtSecretKey,
+		createDynamoDBClient(awsSession),
+		awsSession,
 	)
 
 	go watermill.StartSubscribers(appContext)
@@ -195,4 +206,32 @@ func startGRPCServer() {
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
+}
+
+func createAWSSession() (*session.Session, error) {
+	accessKeyID := os.Getenv("AWS_ACCESS_KEY_ID")
+	secretAccessKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
+	region := os.Getenv("AWS_REGION")
+
+	creds := credentials.NewStaticCredentials(accessKeyID, secretAccessKey, "")
+
+	sess, err := session.NewSession(&aws.Config{
+		Region:      aws.String(region),
+		Credentials: creds,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AWS session: %v", err)
+	}
+
+	return sess, nil
+}
+
+func createDynamoDBClient(awsSess *session.Session) *cache.DynamoDBClient {
+	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
+	client, err := cache.NewDynamoDBClient(awsSess, tableName)
+	if err != nil {
+		log.Fatalf("Failed to create DynamoDB client: %v", err)
+	}
+	return client
 }
