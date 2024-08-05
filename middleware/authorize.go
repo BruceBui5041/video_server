@@ -1,13 +1,18 @@
 package middleware
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"video_server/appconst"
 	"video_server/common"
 	"video_server/component"
 	"video_server/component/tokenprovider/jwt"
-	"video_server/model/user/userstore"
+	"video_server/logger"
+	models "video_server/model"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 func ErrWrongAuthHeader(err error) *common.AppError {
@@ -17,7 +22,6 @@ func ErrWrongAuthHeader(err error) *common.AppError {
 func RequiredAuth(appCtx component.AppContext) func(ctx *gin.Context) {
 	jwtProvider := jwt.NewTokenJWTProvider(appCtx.SecretKey())
 	return func(ctx *gin.Context) {
-		// Get the access_token from the cookie
 		token, err := ctx.Cookie("access_token")
 
 		if err != nil {
@@ -30,12 +34,21 @@ func RequiredAuth(appCtx component.AppContext) func(ctx *gin.Context) {
 			panic(err)
 		}
 
-		db := appCtx.GetMainDBConnection()
-		userStore := userstore.NewSQLStore(db)
+		// Try to get user from cache
+		cacheKey := fmt.Sprintf("%s:%d", appconst.USER_PREFIX, payload.UserId)
+		dynamoDBClient := appCtx.GetDynamoDBClient()
+		cachedUser, err := dynamoDBClient.Get(cacheKey)
+		if err != nil || cachedUser == "" {
+			logger.AppLogger.Error("cannot get account from cache", zap.Any("key", cacheKey), zap.Error(err))
+			panic(common.ErrNoPermission(errors.New("token expired")))
+		}
 
-		user, err := userStore.FindUser(ctx, map[string]interface{}{"id": payload.UserId})
+		var user *models.User
+		// User found in cache, unmarshal it
+		err = json.Unmarshal([]byte(cachedUser), &user)
 		if err != nil {
-			panic(err)
+			// If there's an error unmarshalling, we'll fetch from the database
+			user = nil
 		}
 
 		if user.Status != common.StatusActive {

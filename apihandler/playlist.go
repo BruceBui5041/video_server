@@ -38,7 +38,7 @@ func GetPlaylistHandler(appCtx component.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		cacheKey := fmt.Sprintf("%s:%d", courseSlug, videoId)
+		cacheKey := fmt.Sprintf("%s:%s:%d", appconst.VIDEO_URL_PREFIX, courseSlug, videoId)
 		dynamoDBClient := appCtx.GetDynamoDBClient()
 		cachedURL, err := dynamoDBClient.Get(cacheKey)
 		if err != nil {

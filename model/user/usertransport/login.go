@@ -28,7 +28,13 @@ func Login(appCtx component.AppContext) gin.HandlerFunc {
 		md5 := hasher.NewMD5Hash()
 
 		userStore := userstore.NewSQLStore(db)
-		loginbiz := userbiz.NewLoginBusiness(userStore, tokenProvider, md5, 60*60*24*30)
+		loginbiz := userbiz.NewLoginBusiness(
+			userStore,
+			tokenProvider,
+			md5,
+			60*60*24*30,
+			appCtx.GetDynamoDBClient(),
+		)
 
 		account, err := loginbiz.Login(ctx, &loginUserData)
 
@@ -48,6 +54,7 @@ func Login(appCtx component.AppContext) gin.HandlerFunc {
 			Domain:   "localhost",
 			Expires:  time.Now().Add(30 * 24 * time.Hour), // 30 days expiration
 		}
+
 		http.SetCookie(ctx.Writer, cookie)
 
 		ctx.JSON(http.StatusOK, common.SimpleSuccessResponse(account))

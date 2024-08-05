@@ -1,9 +1,12 @@
 package appconst
 
+// DynamoDB
 const (
-	RawVideoS3Key = "raw-videos"
+	VIDEO_URL_PREFIX = "video_url"
+	USER_PREFIX      = "user"
 )
 
+// local TOPIC
 const (
 	TopicNewVideoUploaded = "new_video_uploaded"
 	TopicVideoProcessing  = "video_processing"
