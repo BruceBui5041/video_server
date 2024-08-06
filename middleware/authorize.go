@@ -3,16 +3,12 @@ package middleware
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
-	"video_server/appconst"
 	"video_server/common"
 	"video_server/component"
 	"video_server/component/tokenprovider/jwt"
-	"video_server/logger"
 	models "video_server/model"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func ErrWrongAuthHeader(err error) *common.AppError {
@@ -35,11 +31,9 @@ func RequiredAuth(appCtx component.AppContext) func(ctx *gin.Context) {
 		}
 
 		// Try to get user from cache
-		cacheKey := fmt.Sprintf("%s:%d", appconst.USER_PREFIX, payload.UserId)
 		dynamoDBClient := appCtx.GetDynamoDBClient()
-		cachedUser, err := dynamoDBClient.Get(cacheKey)
+		cachedUser, err := dynamoDBClient.GetUserCache(uint32(payload.UserId))
 		if err != nil || cachedUser == "" {
-			logger.AppLogger.Error("cannot get account from cache", zap.Any("key", cacheKey), zap.Error(err))
 			panic(common.ErrNoPermission(errors.New("token expired")))
 		}
 

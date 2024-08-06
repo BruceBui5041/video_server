@@ -2,8 +2,8 @@ package appconst
 
 // DynamoDB
 const (
-	VIDEO_URL_PREFIX = "video_url"
-	USER_PREFIX      = "user"
+	VideoURLPrefix = "video_url"
+	UserPrefix     = "user"
 )
 
 // local TOPIC

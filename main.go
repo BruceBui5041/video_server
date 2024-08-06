@@ -40,6 +40,8 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+	logger.CreateAppLogger()
+
 	jwtSecretKey := os.Getenv("JWTSecretKey")
 
 	client, conn := grpcserver.ConnectToVideoProcessingServer()
@@ -228,8 +230,7 @@ func createAWSSession() (*session.Session, error) {
 }
 
 func createDynamoDBClient(awsSess *session.Session) *cache.DynamoDBClient {
-	tableName := os.Getenv("DYNAMODB_TABLE_NAME")
-	client, err := cache.NewDynamoDBClient(awsSess, tableName)
+	client, err := cache.NewDynamoDBClient(awsSess)
 	if err != nil {
 		log.Fatalf("Failed to create DynamoDB client: %v", err)
 	}

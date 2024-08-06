@@ -38,9 +38,8 @@ func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 			return
 		}
 
-		cacheKey := fmt.Sprintf("%s:%s:%d", appconst.VIDEO_URL_PREFIX, courseSlug, videoId)
 		dynamoDBClient := appCtx.GetDynamoDBClient()
-		cachedURL, err := dynamoDBClient.Get(cacheKey)
+		cachedURL, err := dynamoDBClient.GetVideoCache(courseSlug, videoId)
 		if err != nil {
 			logger.AppLogger.Error("Error getting cached URL from DynamoDB", zap.Error(err))
 		}
@@ -62,7 +61,7 @@ func SegmentHandler(appCtx component.AppContext) gin.HandlerFunc {
 
 			videoURL = video.VideoURL
 
-			err = dynamoDBClient.Set(cacheKey, videoURL)
+			err = dynamoDBClient.SetVideoCache(courseSlug, *video)
 			if err != nil {
 				logger.AppLogger.Error("Error caching URL in DynamoDB", zap.Error(err))
 			}

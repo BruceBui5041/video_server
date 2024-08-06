@@ -11,7 +11,7 @@ import (
 
 var AppLogger *zap.Logger
 
-func init() {
+func CreateAppLogger() {
 	logLevel := getLogLevelFromEnv()
 
 	config := zap.NewProductionConfig()
