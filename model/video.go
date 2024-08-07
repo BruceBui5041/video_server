@@ -20,6 +20,7 @@ type Video struct {
 	Tags            []Tag      `json:"tags" gorm:"many2many:video_tags;"`
 	Progress        []Progress `json:"progress"`
 	AllowPreview    bool       `json:"allow_preview" gorm:"default:false"`
+	IntroVideo      bool       `json:"intro_video" gorm:"default:false"`
 }
 
 func (Video) TableName() string {

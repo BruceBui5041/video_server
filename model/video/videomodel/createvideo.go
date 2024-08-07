@@ -15,6 +15,7 @@ type CreateVideo struct {
 	ThumbnailURL    string `json:"thumbnail_url" form:"thumbnail_url"`
 	Duration        int    `json:"duration" form:"duration"`
 	Order           int    `json:"order" form:"order"`
+	IntroVideo      bool   `json:"intro_video" form:"intro_video"`
 }
 
 func (cv *CreateVideo) Mask(isAdmin bool) {

@@ -3,6 +3,7 @@ package videobiz
 import (
 	"context"
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"video_server/common"
 	models "video_server/model"
@@ -16,6 +17,7 @@ type VideoRepo interface {
 		videoFile,
 		thumbnailFile *multipart.FileHeader,
 	) (*models.Video, error)
+	CheckExistingIntroVideo(ctx context.Context, courseID uint32) (*models.Video, error)
 }
 
 type createVideoBiz struct {
@@ -34,6 +36,16 @@ func (v *createVideoBiz) CreateNewVideo(
 ) (*models.Video, error) {
 	if err := v.validateInput(input); err != nil {
 		return nil, err
+	}
+
+	if input.IntroVideo {
+		existingIntroVideo, err := v.repo.CheckExistingIntroVideo(ctx, input.CourseID)
+		if err != nil && err != common.RecordNotFound {
+			return nil, common.ErrCannotCreateEntity(models.VideoEntityName, err)
+		}
+		if existingIntroVideo != nil {
+			return nil, fmt.Errorf("the %s already is the intro video of the course", existingIntroVideo.Title)
+		}
 	}
 
 	video, err := v.repo.CreateNewVideo(

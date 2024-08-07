@@ -10,7 +10,7 @@ import (
 
 var RedisClient *redis.Client
 
-func init() {
+func CreateRedisClient() {
 	// Get Redis configuration from environment variables
 	redisAddr := os.Getenv("REDIS_ADDR")
 	if redisAddr == "" {

@@ -36,6 +36,10 @@ type CreateVideoStore interface {
 		id uint32,
 		updateData *videomodel.UpdateVideo,
 	) error
+	FindIntroVideo(
+		ctx context.Context,
+		courseID uint32,
+	) (*models.Video, error)
 }
 
 type createVideoRepo struct {
@@ -72,6 +76,7 @@ func (repo *createVideoRepo) CreateNewVideo(
 		Duration:     input.Duration,
 		Order:        input.Order,
 		ThumbnailURL: input.ThumbnailURL,
+		IntroVideo:   input.IntroVideo,
 	}
 
 	videoId, err := repo.videoStore.CreateNewVideo(ctx, newVideo)
@@ -124,6 +129,10 @@ func (repo *createVideoRepo) CreateNewVideo(
 	video.Course = *course
 
 	return video, nil
+}
+
+func (repo *createVideoRepo) CheckExistingIntroVideo(ctx context.Context, courseID uint32) (*models.Video, error) {
+	return repo.videoStore.FindIntroVideo(ctx, courseID)
 }
 
 func (repo *createVideoRepo) uploadFiles(videoFile, thumbnailFile *multipart.FileHeader, videoKey, thumbnailKey string) error {
