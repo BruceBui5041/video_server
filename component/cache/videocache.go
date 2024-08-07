@@ -46,6 +46,7 @@ func (d *DynamoDBClient) GetVideoCache(courseSlug string, videoId uint32) (strin
 		duration := time.Since(start)
 		durationMs := float64(duration) / float64(time.Millisecond)
 		logger.AppLogger.Info("dynamoDB Get duration",
+			zap.String("table", videoTableName),
 			zap.String("key", cacheKey),
 			zap.Float64("duration_ms", durationMs))
 	}()

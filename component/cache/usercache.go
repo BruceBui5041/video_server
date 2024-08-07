@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/jinzhu/copier"
+	"github.com/spf13/viper"
 	"go.uber.org/zap"
 )
 
@@ -35,6 +36,9 @@ func (d *DynamoDBClient) SetUserCache(user models.User) error {
 		return err
 	}
 
+	userCacheTTL := viper.GetInt("DYNAMODB_USER_CACHE_TTL")
+	ttl := time.Now().Add(time.Duration(userCacheTTL) * time.Hour).Unix()
+
 	item := map[string]*dynamodb.AttributeValue{
 		"cachekey": {
 			S: aws.String(cacheKey),
@@ -44,6 +48,9 @@ func (d *DynamoDBClient) SetUserCache(user models.User) error {
 		},
 		"value": {
 			S: aws.String(string(cacheUserJson)),
+		},
+		"ttl": {
+			N: aws.String(strconv.FormatInt(ttl, 10)),
 		},
 	}
 
@@ -64,6 +71,7 @@ func (d *DynamoDBClient) GetUserCache(userId uint32) (string, error) {
 		duration := time.Since(start)
 		durationMs := float64(duration) / float64(time.Millisecond)
 		logger.AppLogger.Info("dynamoDB Get duration",
+			zap.String("table", userTableName),
 			zap.String("key", key),
 			zap.Float64("duration_ms", durationMs))
 	}()
@@ -78,7 +86,7 @@ func (d *DynamoDBClient) GetUserCache(userId uint32) (string, error) {
 			},
 		},
 		TableName:      aws.String(userTableName),
-		ConsistentRead: aws.Bool(false),
+		ConsistentRead: aws.Bool(true),
 	}
 
 	result, err := d.client.GetItem(input)
