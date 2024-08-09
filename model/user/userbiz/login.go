@@ -14,7 +14,7 @@ import (
 )
 
 type LoginStorage interface {
-	FindUser(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*models.User, error)
+	FindOne(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*models.User, error)
 }
 
 // type TokenConfig interface {
@@ -47,7 +47,7 @@ func NewLoginBusiness(
 }
 
 func (business *loginBusiness) Login(ctx context.Context, data *usermodel.UserLogin) (*tokenprovider.Token, error) {
-	user, err := business.loginStorage.FindUser(ctx, map[string]interface{}{"email": data.Email})
+	user, err := business.loginStorage.FindOne(ctx, map[string]interface{}{"email": data.Email})
 
 	if err != nil {
 		return nil, usermodel.ErrUsernameOrPasswordInvalid

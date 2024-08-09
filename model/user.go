@@ -8,19 +8,21 @@ import (
 	"go.uber.org/zap"
 )
 
+const UserEntityName = "User"
+
 type User struct {
 	common.SQLModel   `json:",inline"`
-	LastName          string     `json:"lastname" gorm:"column:lastname;"`
-	FirstName         string     `json:"firstname" gorm:"column:firstname;"`
-	Email             string     `gorm:"column:email;uniqueIndex;not null;size:100"`
-	ProfilePictureURL string     `gorm:"column:profile_picture_url;size:255"`
-	Roles             []Role     `gorm:"many2many:user_role;"`
-	Auths             []UserAuth `gorm:"foreignKey:UserID"`
-	CreatedCourses    []Course   `gorm:"foreignKey:CreatorID"`
-	Enrollments       []Enrollment
-	Progress          []Progress
-	Salt              string `json:"-" gorm:"column:salt;"`
-	Password          string `json:"-" gorm:"column:password;"`
+	LastName          string       `json:"lastname" gorm:"column:lastname;"`
+	FirstName         string       `json:"firstname" gorm:"column:firstname;"`
+	Email             string       `json:"email" gorm:"column:email;uniqueIndex;not null;size:100"`
+	ProfilePictureURL string       `json:"profile_picture_url" gorm:"column:profile_picture_url;size:255"`
+	Roles             []Role       `json:"roles" gorm:"many2many:user_role;"`
+	Auths             []UserAuth   `json:"auths" gorm:"foreignKey:UserID"`
+	CreatedCourses    []Course     `json:"created_courses" gorm:"foreignKey:CreatorID"`
+	Enrollments       []Enrollment `json:"enrollments" `
+	Progress          []Progress   `json:"progress"`
+	Salt              string       `json:"-" gorm:"column:salt;"`
+	Password          string       `json:"-" gorm:"column:password;"`
 }
 
 func (User) TableName() string {

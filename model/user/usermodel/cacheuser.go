@@ -1,6 +1,9 @@
 package usermodel
 
-import models "video_server/model"
+import (
+	"video_server/common"
+	models "video_server/model"
+)
 
 type CacheUser struct {
 	Status            string            `json:"status"`
@@ -10,4 +13,5 @@ type CacheUser struct {
 	ProfilePictureURL string            `json:"profile_picture_url"`
 	Roles             []models.Role     `json:"roles"`
 	Auths             []models.UserAuth `json:"auths"`
+	FakeId            *common.UID       `json:"id"`
 }

@@ -6,7 +6,7 @@ import (
 	models "video_server/model"
 )
 
-func (s *sqlStore) FindUser(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*models.User, error) {
+func (s *sqlStore) FindOne(ctx context.Context, conditions map[string]interface{}, moreInfo ...string) (*models.User, error) {
 	db := s.db.Table(models.User{}.TableName())
 
 	for i := range moreInfo {

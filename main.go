@@ -118,14 +118,17 @@ func startHTTPServer(appCtx component.AppContext) {
 	// Configure CORS
 	config := cors.DefaultConfig()
 	// config.AllowAllOrigins = true
-	config.AllowOrigins = []string{"http://localhost:8080"}
+	config.AllowOrigins = []string{"http://localhost:8080", "http://localhost:8083"}
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
 	config.AllowCredentials = true
 	config.ExposeHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	config.MaxAge = 300
 	r.Use(cors.New(config))
 
-	// Define your routes
+	user := r.Group("/user", middleware.RequiredAuth(appCtx))
+	{
+		user.GET("", usertransport.GetUser(appCtx))
+	}
 
 	video := r.Group("/video", middleware.RequiredAuth(appCtx))
 	{
