@@ -29,6 +29,9 @@ func (d *DynamoDBClient) SetUserCache(user models.User) error {
 		return err
 	}
 
+	user.Mask(false)
+
+	cacheUser.FakeId = user.FakeId
 	cacheUserJson, err := json.Marshal(cacheUser)
 
 	if err != nil {

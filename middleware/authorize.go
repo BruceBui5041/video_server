@@ -49,7 +49,12 @@ func RequiredAuth(appCtx component.AppContext) func(ctx *gin.Context) {
 			panic(common.ErrNoPermission(errors.New("account unavailable")))
 		}
 
-		user.Mask(false)
+		uid, err := common.FromBase58(user.GetFakeId())
+		if err != nil {
+			panic(err)
+		}
+
+		user.Id = uid.GetLocalID()
 
 		ctx.Set(common.CurrentUser, user)
 		ctx.Next()
